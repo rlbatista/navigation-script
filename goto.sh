@@ -74,82 +74,6 @@ function goto() {
   return 0
 }
 
-function __goto_manual_header() {
-  echo -e "A principal função do script é permitir a navegação rápida entre"
-  echo -e "diretórios mapeados no arquivo 'destinos.map'"
-  echo -e "Cada linha no arquivo representa um mapeamento entre um apelido e"
-  echo -e "um diretório no formato 'apelido=diretório'"
-  echo -e "O script também permite a edição do arquivo de mapeamento, adição,"
-  echo -e "remoção e atualização de destinos"
-}
-
-function __goto_manual_use() {
-  echo -e "\nUso:"
-}
-
-function __goto_manual_browse_directory() {
-  echo -e "\nNavega para um diretório mapeado:"
-  echo -e "\tgoto <apelido> [subdiretório]"
-  echo -e "\t\t<apelido> - apelido do diretório mapeado (use <TAB> para completar)"
-  echo -e "\t\t[subdiretório] - subdiretório do diretório mapeado (use <TAB> para completar)"
-}
-
-function __goto_manual_show_directories() {
-  echo -e "\nMostra os diretórios mapeados:"
-  echo -e "\tgoto -s|--show-destinies"
-}
-
-function __goto_manual_check_destinies() {
-  echo -e "\nCheca se todos os diretórios mapeados ainda existem:"
-  echo -e "\tgoto -c|--check-destinies"
-}
-
-function __goto_manual_edit_destinies() {
-  echo -e "\nAbre o arquivo de mapeamento para edição (com o VI):"
-  echo -e "\tgoto -e|--edit"
-}
-
-function __goto_manual_add_destiny() {
-  echo -e "\nAdiciona um novo destino:"
-  echo -e "\tgoto -a|--add <diretório> <apelido>"
-  echo -e "\t\t<diretório> - diretório a ser mapeado (use <TAB> para completar)"
-  echo -e "\t\t<apelido> - apelido do diretório mapeado"
-  echo -e "\t* Se o apelido já existir, é exibida uma mensagem de erro"
-}
-
-function __goto_manual_delete_destiny() {
-  echo -e "\nRemove um destino:"
-  echo -e "\tgoto -d|--delete <apelido>"
-  echo -e "\t\t<apelido> - apelido do diretório mapeado"
-  echo -e "\t* Se o apelido não existir, é exibida uma mensagem de erro"
-}
-
-function __goto_manual_update_destiny() {
-  echo -e "\nAtualiza um destino:"
-  echo -e "\tgoto -u|--update <apelido> <diretório>"
-  echo -e "\t\t<apelido> - apelido do diretório mapeado"
-  echo -e "\t\t<diretório> - diretório a ser mapeado (use <TAB> para completar)"
-  echo -e "\t* Se o apelido não existir, é exibida uma mensagem de erro"
-}
-
-function __goto_manual_show_manual() {
-  echo -e "\nExibe o manual:"
-  echo -e "\tgoto -h|--help"
-}
-
-function __goto_manual() {
-  __goto_manual_header
-  __goto_manual_use
-  __goto_manual_browse_directory
-  __goto_manual_show_directories
-  __goto_manual_check_destinies
-  __goto_manual_edit_destinies
-  __goto_manual_add_destiny
-  __goto_manual_delete_destiny
-  __goto_manual_update_destiny
-  __goto_manual_show_manual
-}
-
 function __check_destinies() {
   local mapFile="$HOME/scripts/destinos.map"
   local status=0
@@ -242,7 +166,6 @@ function __remove_destiny() {
   echo "Destino [$destAlias] removido"
 }
 
-
 function __update_destiny() {
   local destMap="$HOME/scripts/destinos.map"
   local destAlias=$1
@@ -334,3 +257,83 @@ function __goto_completion()
 }
 
 complete -o nosort -F __goto_completion goto
+
+
+##########################################################################################################
+## Funções de ajuda
+##########################################################################################################
+function __goto_manual_header() {
+  echo -e "A principal função do script é permitir a navegação rápida entre"
+  echo -e "diretórios mapeados no arquivo 'destinos.map'"
+  echo -e "Cada linha no arquivo representa um mapeamento entre um apelido e"
+  echo -e "um diretório no formato 'apelido=diretório'"
+  echo -e "O script também permite a edição do arquivo de mapeamento, adição,"
+  echo -e "remoção e atualização de destinos"
+}
+
+function __goto_manual_use() {
+  echo -e "\nUso:"
+}
+
+function __goto_manual_browse_directory() {
+  echo -e "\nNavega para um diretório mapeado:"
+  echo -e "\tgoto <apelido> [subdiretório]"
+  echo -e "\t\t<apelido> - apelido do diretório mapeado (use <TAB> para completar)"
+  echo -e "\t\t[subdiretório] - subdiretório do diretório mapeado (use <TAB> para completar)"
+}
+
+function __goto_manual_show_directories() {
+  echo -e "\nMostra os diretórios mapeados:"
+  echo -e "\tgoto -s|--show-destinies"
+}
+
+function __goto_manual_check_destinies() {
+  echo -e "\nCheca se todos os diretórios mapeados ainda existem:"
+  echo -e "\tgoto -c|--check-destinies"
+}
+
+function __goto_manual_edit_destinies() {
+  echo -e "\nAbre o arquivo de mapeamento para edição (com o VI):"
+  echo -e "\tgoto -e|--edit"
+}
+
+function __goto_manual_add_destiny() {
+  echo -e "\nAdiciona um novo destino:"
+  echo -e "\tgoto -a|--add <diretório> <apelido>"
+  echo -e "\t\t<diretório> - diretório a ser mapeado (use <TAB> para completar)"
+  echo -e "\t\t<apelido> - apelido do diretório mapeado"
+  echo -e "\t* Se o apelido já existir, é exibida uma mensagem de erro"
+}
+
+function __goto_manual_delete_destiny() {
+  echo -e "\nRemove um destino:"
+  echo -e "\tgoto -d|--delete <apelido>"
+  echo -e "\t\t<apelido> - apelido do diretório mapeado"
+  echo -e "\t* Se o apelido não existir, é exibida uma mensagem de erro"
+}
+
+function __goto_manual_update_destiny() {
+  echo -e "\nAtualiza um destino:"
+  echo -e "\tgoto -u|--update <apelido> <diretório>"
+  echo -e "\t\t<apelido> - apelido do diretório mapeado"
+  echo -e "\t\t<diretório> - diretório a ser mapeado (use <TAB> para completar)"
+  echo -e "\t* Se o apelido não existir, é exibida uma mensagem de erro"
+}
+
+function __goto_manual_show_manual() {
+  echo -e "\nExibe o manual:"
+  echo -e "\tgoto -h|--help"
+}
+
+function __goto_manual() {
+  __goto_manual_header
+  __goto_manual_use
+  __goto_manual_browse_directory
+  __goto_manual_show_directories
+  __goto_manual_check_destinies
+  __goto_manual_edit_destinies
+  __goto_manual_add_destiny
+  __goto_manual_delete_destiny
+  __goto_manual_update_destiny
+  __goto_manual_show_manual
+}
