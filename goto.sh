@@ -10,7 +10,7 @@ function goto() {
     return 0
   }
 
-  local mapfile="$(__get_destiny_file)"
+  local mapfile="$(__goto_get_destiny_file)"
 
   [[ $1 == '-e' || $1 == '--edit' ]] && {
     vi $mapfile
@@ -23,7 +23,7 @@ function goto() {
   }
 
   [[ $1 == '-c' || $1 == '--check-destinies' ]] && {
-    __check_destinies
+    __goto_check_destinies
     return $?
   }
 
@@ -34,20 +34,20 @@ function goto() {
   }
 
   [[ $1 == '-a' || $1 == '--add' ]] && {
-    __create_bkp
-    __add_destiny $2 $3
+    __goto_create_bkp
+    __goto_add_destiny $2 $3
     return $?
   }
 
   [[ $1 == '-d' || $1 == '--delete' ]] && {
-    __create_bkp
-    __remove_destiny $2
+    __goto_create_bkp
+    __goto_remove_destiny $2
     return $?
   }
 
   [[ $1 == '-u' || $1 == '--update' ]] && {
-    __create_bkp
-    __update_destiny $2 $3
+    __goto_create_bkp
+    __goto_update_destiny $2 $3
     return $?
   }
 
@@ -74,12 +74,12 @@ function goto() {
   return 0
 }
 
-function __get_destiny_file() {
+function __goto_get_destiny_file() {
   echo "$HOME/scripts/destinos.map"
 }
 
-function __check_destinies() {
-  local mapFile="$(__get_destiny_file)"
+function __goto_check_destinies() {
+  local mapFile="$(__goto_get_destiny_file)"
   local status=0
   while IFS="=" read -r chave destino; do
     [[ -d $destino ]] || {
@@ -93,9 +93,9 @@ function __check_destinies() {
   }
 }
 
-function __create_bkp() {
-  local destMap="$(__get_destiny_file)"
-  local bkpFile="$(__get_destiny_file)~"
+function __goto_create_bkp() {
+  local destMap="$(__goto_get_destiny_file)"
+  local bkpFile="$(__goto_get_destiny_file)~"
 
   [[ -f $destMap ]] || {
     touch $destMap
@@ -104,8 +104,8 @@ function __create_bkp() {
   cp $destMap $bkpFile
 }
 
-function __add_destiny() {
-  local destMap="$(__get_destiny_file)"
+function __goto_add_destiny() {
+  local destMap="$(__goto_get_destiny_file)"
   local dest=$1
   local destAlias=$2
 
@@ -143,13 +143,13 @@ function __add_destiny() {
   }
 
   echo "$destAlias=$(realpath $dest)" >> $destMap
-  __sort_destiny_file
+  __goto_sort_destiny_file
 
   echo "Destino [$destAlias] adicionado"
 }
 
-function __remove_destiny() {
-  local destMap="$(__get_destiny_file)"
+function __goto_remove_destiny() {
+  local destMap="$(__goto_get_destiny_file)"
   local destAlias=$1
 
   [[ -z $destAlias ]] && {
@@ -170,8 +170,8 @@ function __remove_destiny() {
   echo "Destino [$destAlias] removido"
 }
 
-function __update_destiny() {
-  local destMap="$(__get_destiny_file)"
+function __goto_update_destiny() {
+  local destMap="$(__goto_get_destiny_file)"
   local destAlias=$1
   local dir=$2
 
@@ -203,14 +203,14 @@ function __update_destiny() {
     return 2048
   }
   
-  __remove_destiny $destAlias 2>&1 > /dev/null
-  __add_destiny $dir $destAlias 2>&1 > /dev/null
+  __goto_remove_destiny $destAlias 2>&1 > /dev/null
+  __goto_add_destiny $dir $destAlias 2>&1 > /dev/null
 
   echo "Destino [$destAlias] atualizado"
 }
 
-function __sort_destiny_file() {
-  local destMap="$(__get_destiny_file)"
+function __goto_sort_destiny_file() {
+  local destMap="$(__goto_get_destiny_file)"
   local tmpFile=$(mktemp)
 
   sort $destMap > $tmpFile
@@ -219,7 +219,7 @@ function __sort_destiny_file() {
 
 function __goto_completion()
 {
-  local destFile="$(__get_destiny_file)"
+  local destFile="$(__goto_get_destiny_file)"
   [[ -f $destFile ]] || {
     touch $destFile
   }
