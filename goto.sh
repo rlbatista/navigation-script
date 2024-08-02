@@ -10,7 +10,7 @@ function goto() {
     return 0
   }
 
-  local mapfile="$HOME/scripts/destinos.map"
+  local mapfile="$(__get_destiny_file)"
 
   [[ $1 == '-e' || $1 == '--edit' ]] && {
     vi $mapfile
@@ -74,8 +74,12 @@ function goto() {
   return 0
 }
 
+function __get_destiny_file() {
+  echo "$HOME/scripts/destinos.map"
+}
+
 function __check_destinies() {
-  local mapFile="$HOME/scripts/destinos.map"
+  local mapFile="$(__get_destiny_file)"
   local status=0
   while IFS="=" read -r chave destino; do
     [[ -d $destino ]] || {
@@ -90,8 +94,8 @@ function __check_destinies() {
 }
 
 function __create_bkp() {
-  local destMap="$HOME/scripts/destinos.map"
-  local bkpFile="$HOME/scripts/destinos.map~"
+  local destMap="$(__get_destiny_file)"
+  local bkpFile="$(__get_destiny_file)~"
 
   [[ -f $destMap ]] || {
     touch $destMap
@@ -101,7 +105,7 @@ function __create_bkp() {
 }
 
 function __add_destiny() {
-  local destMap="$HOME/scripts/destinos.map"
+  local destMap="$(__get_destiny_file)"
   local dest=$1
   local destAlias=$2
 
@@ -145,7 +149,7 @@ function __add_destiny() {
 }
 
 function __remove_destiny() {
-  local destMap="$HOME/scripts/destinos.map"
+  local destMap="$(__get_destiny_file)"
   local destAlias=$1
 
   [[ -z $destAlias ]] && {
@@ -167,7 +171,7 @@ function __remove_destiny() {
 }
 
 function __update_destiny() {
-  local destMap="$HOME/scripts/destinos.map"
+  local destMap="$(__get_destiny_file)"
   local destAlias=$1
   local dir=$2
 
@@ -206,7 +210,7 @@ function __update_destiny() {
 }
 
 function __sort_destiny_file() {
-  local destMap="$HOME/scripts/destinos.map"
+  local destMap="$(__get_destiny_file)"
   local tmpFile=$(mktemp)
 
   sort $destMap > $tmpFile
@@ -215,7 +219,7 @@ function __sort_destiny_file() {
 
 function __goto_completion()
 {
-  local destFile="$HOME/scripts/destinos.map"
+  local destFile="$(__get_destiny_file)"
   [[ -f $destFile ]] || {
     touch $destFile
   }
