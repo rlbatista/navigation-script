@@ -54,7 +54,7 @@ function goto() {
   destino=$(awk -v dest="$1" -F'=' '$1 == dest {print $2}' $mapfile)
 
   [[ -z $destino ]] && {
-    echo "Destino [$1] não encontrado"
+    echo "Destino [$1] não encontrado" >&2
     return 2
   }
   
@@ -65,7 +65,7 @@ function goto() {
   }
 
   [[ ! -d $destino ]] && {
-    echo "Diretório [$destino] não encontrado"
+    echo "Diretório [$destino] não encontrado" >&2
     return 4
   }
 
@@ -110,21 +110,21 @@ function __add_destiny() {
   local destAlias=$2
 
   [[ -z $dest ]] && {
-    echo 'Informe o diretório de destino'
+    echo 'Informe o diretório de destino' >&2
     __goto_manual_use
     __goto_manual_add_destiny
     return 4
   }
 
   [[ -d $dest ]] || {
-    echo "Diretório [$dest] não encontrado"
+    echo "Diretório [$dest] não encontrado" >&2
     __goto_manual_use
     __goto_manual_add_destiny
     return 8
   }
 
   [[ -z $destAlias ]] && {
-    echo 'Informe o apelido do destino'
+    echo 'Informe o apelido do destino' >&2
     __goto_manual_use
     __goto_manual_add_destiny
     return 16
@@ -135,8 +135,8 @@ function __add_destiny() {
   }
 
   grep -q "^$destAlias=" $destMap && {
-    echo "Destino [$destAlias] já existe"
-    echo "Use -u --update para atualizar o destino"
+    echo "Destino [$destAlias] já existe" >&2
+    echo "Use -u --update para atualizar o destino" >&2
     __goto_manual_use
     __goto_manual_add_destiny    
     return 32
@@ -153,14 +153,14 @@ function __remove_destiny() {
   local destAlias=$1
 
   [[ -z $destAlias ]] && {
-    echo 'Informe o apelido do destino'
+    echo 'Informe o apelido do destino' >&2
     __goto_manual_use
     __goto_manual_delete_destiny
     return 64
   }
 
   grep -q "^$destAlias=" $destMap || {
-    echo "Destino [$destAlias] não encontrado"
+    echo "Destino [$destAlias] não encontrado" >&2
     __goto_manual_use
     __goto_manual_delete_destiny
     return 128
@@ -176,28 +176,28 @@ function __update_destiny() {
   local dir=$2
 
   [[ -z $dir ]] && {
-    echo 'Informe o diretório de destino'
+    echo 'Informe o diretório de destino' >&2
     __goto_manual_use
     __goto_manual_update_destiny
     return 256
   }
 
   [[ -d $dir ]] || {
-    echo "Diretório [$dir] não encontrado"
+    echo "Diretório [$dir] não encontrado" >&2
     __goto_manual_use
     __goto_manual_update_destiny
     return 512
   }
   
   [[ -z $destAlias ]] && {
-    echo 'Informe o apelido do destino'
+    echo 'Informe o apelido do destino' >&2
     __goto_manual_use
     __goto_manual_update_destiny
     return 1024
   }
 
   grep -q "^$destAlias=" $destMap || {
-    echo "Destino [$destAlias] não encontrado"
+    echo "Destino [$destAlias] não encontrado" >&2
     __goto_manual_use
     __goto_manual_update_destiny
     return 2048
