@@ -1,4 +1,11 @@
  #!/bin/bash
+
+##########################################################################################################
+## Função...: goto
+## Descrição: Função principal do script, onde a principal atividade é navegar para diretório mapeados em
+##            em um arquivo (destinos.map).
+## Dependencias: Este script depende do eza, batcat e vi
+##########################################################################################################
 function goto() {
   [[ $# == 0 ]] && {
     __goto_manual
@@ -74,10 +81,21 @@ function goto() {
   return 0
 }
 
+##########################################################################################################
+## Função...: __goto_get_destiny_file
+## Descrição: Função interna que visa centralizar a localização do arquivo utilizado para o mapeamendo dos
+##            diretórios. Caso queira mudar o local do arquivo, altere nesta função.
+##########################################################################################################
 function __goto_get_destiny_file() {
   echo "$HOME/scripts/destinos.map"
 }
 
+##########################################################################################################
+## Função...: __goto_check_destinies
+## Descrição: Função interna que provê a funcionalidade de validação dos mapeamentos realizados. Mostra
+##            na tela quais mapeamentos não existem ou, se tudo estiver ok, exibe uma mensagem informando
+##            que está tudo correto.
+##########################################################################################################
 function __goto_check_destinies() {
   local mapFile="$(__goto_get_destiny_file)"
   local status=0
@@ -93,6 +111,12 @@ function __goto_check_destinies() {
   }
 }
 
+##########################################################################################################
+## Função...: __goto_create_bkp
+## Descrição: Provê a funcionalidade de backup do arquivo de destino. Toda operação do script que altera
+##            de alguma forma o conteúdo do arquivo, é feita uma cópia antes. O script mantém apenas uma
+##            cópia.
+##########################################################################################################
 function __goto_create_bkp() {
   local destMap="$(__goto_get_destiny_file)"
   local bkpFile="$(__goto_get_destiny_file)~"
@@ -104,6 +128,10 @@ function __goto_create_bkp() {
   cp $destMap $bkpFile
 }
 
+##########################################################################################################
+## Função...: __goto_add_destiny
+## Descrição: Adiciona uma entrada no arquivo de mapeamento.
+##########################################################################################################
 function __goto_add_destiny() {
   local destMap="$(__goto_get_destiny_file)"
   local dest=$1
@@ -148,6 +176,10 @@ function __goto_add_destiny() {
   echo "Destino [$destAlias] adicionado"
 }
 
+##########################################################################################################
+## Função...: __goto_remove_destiny
+## Descrição: Remove uma entrada do arquivo de mapeamento.
+##########################################################################################################
 function __goto_remove_destiny() {
   local destMap="$(__goto_get_destiny_file)"
   local destAlias=$1
@@ -170,6 +202,10 @@ function __goto_remove_destiny() {
   echo "Destino [$destAlias] removido"
 }
 
+##########################################################################################################
+## Função...: __goto_update_destiny
+## Descrição: Atualiza um mapeamento.
+##########################################################################################################
 function __goto_update_destiny() {
   local destMap="$(__goto_get_destiny_file)"
   local destAlias=$1
@@ -209,6 +245,10 @@ function __goto_update_destiny() {
   echo "Destino [$destAlias] atualizado"
 }
 
+##########################################################################################################
+## Função...: __goto_sort_destiny_file
+## Descrição: Ordena o conteúdo do arquivo de mepamento.
+##########################################################################################################
 function __goto_sort_destiny_file() {
   local destMap="$(__goto_get_destiny_file)"
   local tmpFile=$(mktemp)
@@ -217,6 +257,10 @@ function __goto_sort_destiny_file() {
   mv $tmpFile $destMap
 }
 
+##########################################################################################################
+## Função...: __goto_completion
+## Descrição: Provê a funciolidade "completar" para o script ao pressionar a tecla <TAB>.
+##########################################################################################################
 function __goto_completion()
 {
   local destFile="$(__goto_get_destiny_file)"
