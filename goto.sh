@@ -91,6 +91,7 @@ function goto() {
 ##########################################################################################################
 function __goto_get_destiny_file() {
   echo "$HOME/scripts/destinos.map"
+  return 0
 }
 
 ##########################################################################################################
@@ -100,11 +101,13 @@ function __goto_get_destiny_file() {
 ##            que está tudo correto.
 ##########################################################################################################
 function __goto_check_destinies() {
+  local returnValue=0
   local mapFile="$(__goto_get_destiny_file)"
   local status=0
   while IFS="=" read -r chave destino; do
     [[ -d $destino ]] || {
       status=1
+      returnValue=1
       echo -e "O destino '$destino' apontado por '$chave' não foi encontrado"
     }
   done < "$mapFile"
@@ -112,6 +115,8 @@ function __goto_check_destinies() {
   [[ $status == 0 ]] && { 
     echo "Todos os mapeamentos são válidos" 
   }
+
+  return $returnValue
 }
 
 ##########################################################################################################
@@ -137,6 +142,8 @@ function __goto_purge_destinies() {
     __goto_sort_destiny_file
     echo -e "Arquivo de destinos expurgado com sucesso!"
   } || echo -e "Sem nada a expurgar"
+
+  return 0
 }
 
 ##########################################################################################################
@@ -154,6 +161,7 @@ function __goto_create_bkp() {
   }
 
   cp $destMap $bkpFile
+  return 0
 }
 
 ##########################################################################################################
@@ -202,6 +210,7 @@ function __goto_add_destiny() {
   __goto_sort_destiny_file
 
   echo "Destino [$destAlias] adicionado"
+  return 0
 }
 
 ##########################################################################################################
@@ -228,6 +237,7 @@ function __goto_remove_destiny() {
 
   sed -i "/^$destAlias=/d" $destMap
   echo "Destino [$destAlias] removido"
+  return 0
 }
 
 ##########################################################################################################
@@ -271,6 +281,7 @@ function __goto_update_destiny() {
   __goto_add_destiny $dir $destAlias 2>&1 > /dev/null
 
   echo "Destino [$destAlias] atualizado"
+  return 0
 }
 
 ##########################################################################################################
@@ -283,6 +294,7 @@ function __goto_sort_destiny_file() {
 
   sort $destMap > $tmpFile
   mv $tmpFile $destMap
+  return 0
 }
 
 ##########################################################################################################
@@ -345,10 +357,12 @@ function __goto_manual_header() {
   echo -e "um diretório no formato 'apelido=diretório'"
   echo -e "O script também permite a edição do arquivo de mapeamento, adição,"
   echo -e "remoção e atualização de destinos"
+  return 0
 }
 
 function __goto_manual_use() {
   echo -e "\nUso:"
+  return 0
 }
 
 function __goto_manual_browse_directory() {
@@ -356,26 +370,31 @@ function __goto_manual_browse_directory() {
   echo -e "\tgoto <apelido> [subdiretório]"
   echo -e "\t\t<apelido> - apelido do diretório mapeado (use <TAB> para completar)"
   echo -e "\t\t[subdiretório] - subdiretório do diretório mapeado (use <TAB> para completar)"
+  return 0
 }
 
 function __goto_manual_show_directories() {
   echo -e "\nMostra os diretórios mapeados:"
   echo -e "\tgoto -s|--show-destinies"
+  return 0
 }
 
 function __goto_manual_check_destinies() {
   echo -e "\nCheca se todos os diretórios mapeados ainda existem:"
   echo -e "\tgoto -c|--check-destinies"
+  return 0
 }
 
 function __goto_manual_purge_destinies() {
   echo -e "\nRemove todos os mapeamentos que no qual o diretório destino não existe"
   echo -e "\tgoto -p|--purge-destinies"
+  return 0
 }
 
 function __goto_manual_edit_destinies() {
   echo -e "\nAbre o arquivo de mapeamento para edição (com o VI):"
   echo -e "\tgoto -e|--edit"
+  return 0
 }
 
 function __goto_manual_add_destiny() {
@@ -384,6 +403,7 @@ function __goto_manual_add_destiny() {
   echo -e "\t\t<diretório> - diretório a ser mapeado (use <TAB> para completar)"
   echo -e "\t\t<apelido> - apelido do diretório mapeado"
   echo -e "\t* Se o apelido já existir, é exibida uma mensagem de erro"
+  return 0
 }
 
 function __goto_manual_delete_destiny() {
@@ -391,6 +411,7 @@ function __goto_manual_delete_destiny() {
   echo -e "\tgoto -d|--delete <apelido>"
   echo -e "\t\t<apelido> - apelido do diretório mapeado"
   echo -e "\t* Se o apelido não existir, é exibida uma mensagem de erro"
+  return 0
 }
 
 function __goto_manual_update_destiny() {
@@ -399,11 +420,13 @@ function __goto_manual_update_destiny() {
   echo -e "\t\t<apelido> - apelido do diretório mapeado"
   echo -e "\t\t<diretório> - diretório a ser mapeado (use <TAB> para completar)"
   echo -e "\t* Se o apelido não existir, é exibida uma mensagem de erro"
+  return 0
 }
 
 function __goto_manual_show_manual() {
   echo -e "\nExibe o manual:"
   echo -e "\tgoto -h|--help"
+  return 0
 }
 
 function __goto_manual() {
@@ -418,4 +441,5 @@ function __goto_manual() {
   __goto_manual_delete_destiny
   __goto_manual_update_destiny
   __goto_manual_show_manual
+  return 0
 }
