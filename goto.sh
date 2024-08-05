@@ -40,7 +40,6 @@ function goto() {
   }
 
   [[ -d $1 ]] && {
-#   echo "Indo para diretório [$1]"
     cd $1
     return 0 
   }
@@ -81,7 +80,6 @@ function goto() {
     return 4
   }
 
-# echo "Indo para diretório mapeado [$destino]"
   cd $destino
   return 0
 }
@@ -122,7 +120,7 @@ function __goto_check_destinies() {
 ##########################################################################################################
 function __goto_purge_destinies() {
   local mapFile="$(__goto_get_destiny_file)"
-  local fileWasPurged=1
+  local fileWasPurged="no"
   local createBkp="yes"
   while IFS="=" read -r chave destino; do
     [[ -d $destino ]] || {
@@ -135,10 +133,10 @@ function __goto_purge_destinies() {
     }
   done < "$mapFile"
 
-  [[ $fileWasPurged == 0 ]] && { 
+  [[ $fileWasPurged == 'yes' ]] && { 
     __goto_sort_destiny_file
     echo -e "Arquivo de destinos expurgado com sucesso!"
-  }
+  } || echo -e "Sem nada a expurgar"
 }
 
 ##########################################################################################################
