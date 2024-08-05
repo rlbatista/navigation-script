@@ -34,6 +34,11 @@ function goto() {
     return $?
   }
 
+  [[ $1 == '-p' || $1 == '--purge-destinies' ]] && {
+    __goto_purge_destinies
+    return $?
+  }
+
   [[ -d $1 ]] && {
 #   echo "Indo para diretório [$1]"
     cd $1
@@ -108,6 +113,31 @@ function __goto_check_destinies() {
 
   [[ $status == 0 ]] && { 
     echo "Todos os mapeamentos são válidos" 
+  }
+}
+
+##########################################################################################################
+## Função...: __goto_purge_destinies
+## Descrição: Remove todos os mapeamentos inválidos
+##########################################################################################################
+function __goto_purge_destinies() {
+  local mapFile="$(__goto_get_destiny_file)"
+  local fileWasPurged=1
+  local createBkp="yes"
+  while IFS="=" read -r chave destino; do
+    [[ -d $destino ]] || {
+      fileWasPurged=0
+      [[ createBkp == 'yes' ]] && {
+        __goto_create_bkp
+        createBkp="no-more"
+      }
+      __goto_remove_destiny $chave
+    }
+  done < "$mapFile"
+
+  [[ $fileWasPurged == 0 ]] && { 
+    __goto_sort_destiny_file
+    echo -e "Arquivo de destinos expurgado com sucesso!"
   }
 }
 
@@ -272,7 +302,7 @@ function __goto_completion()
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local registeredDestinies="$(awk -F'=' '{print $1}' $destFile)"
   local registeredDestiniesAsArray=($registeredDestinies)
-  local options="-h --help --e --edit -s --show-destinies -c --check-destinies -a --add -d --delete"
+  local options="-h --help --e --edit -s --show-destinies -c --check-destinies -p --purge-destinies -a --add -d --delete"
 
   if [[ $prev == 'goto' && ! $cur =~ ^- ]] ; then
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
@@ -340,6 +370,11 @@ function __goto_manual_check_destinies() {
   echo -e "\tgoto -c|--check-destinies"
 }
 
+function __goto_manual_purge_destinies() {
+  echo -e "\nRemove todos os mapeamentos que no qual o diretório destino não existe"
+  echo -e "\tgoto -p|--purge-destinies"
+}
+
 function __goto_manual_edit_destinies() {
   echo -e "\nAbre o arquivo de mapeamento para edição (com o VI):"
   echo -e "\tgoto -e|--edit"
@@ -379,6 +414,7 @@ function __goto_manual() {
   __goto_manual_browse_directory
   __goto_manual_show_directories
   __goto_manual_check_destinies
+  __goto_manual_purge_destinies
   __goto_manual_edit_destinies
   __goto_manual_add_destiny
   __goto_manual_delete_destiny
