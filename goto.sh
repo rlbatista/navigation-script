@@ -85,9 +85,10 @@ function goto() {
 }
 
 ##########################################################################################################
-## Função...: __goto_get_destiny_file
-## Descrição: Função interna que visa centralizar a localização do arquivo utilizado para o mapeamendo dos
-##            diretórios. Caso queira mudar o local do arquivo, altere nesta função.
+## Função....: __goto_get_destiny_file
+## Parametros: nenhum
+## Descrição.: Função interna que visa centralizar a localização do arquivo utilizado para o mapeamendo
+##            dos diretórios. Caso queira mudar o local do arquivo, altere nesta função.
 ##########################################################################################################
 function __goto_get_destiny_file() {
   echo "$HOME/scripts/destinos.map"
@@ -95,8 +96,9 @@ function __goto_get_destiny_file() {
 }
 
 ##########################################################################################################
-## Função...: __goto_check_destinies
-## Descrição: Função interna que provê a funcionalidade de validação dos mapeamentos realizados. Mostra
+## Função....: __goto_check_destinies
+## Parametros: nenhum
+## Descrição.: Função interna que provê a funcionalidade de validação dos mapeamentos realizados. Mostra
 ##            na tela quais mapeamentos não existem ou, se tudo estiver ok, exibe uma mensagem informando
 ##            que está tudo correto.
 ##########################################################################################################
@@ -120,8 +122,9 @@ function __goto_check_destinies() {
 }
 
 ##########################################################################################################
-## Função...: __goto_purge_destinies
-## Descrição: Remove todos os mapeamentos inválidos
+## Função....: __goto_purge_destinies
+## Parametros: nenhum
+## Descrição.: Remove todos os mapeamentos inválidos
 ##########################################################################################################
 function __goto_purge_destinies() {
   local mapFile="$(__goto_get_destiny_file)"
@@ -147,8 +150,9 @@ function __goto_purge_destinies() {
 }
 
 ##########################################################################################################
-## Função...: __goto_create_bkp
-## Descrição: Provê a funcionalidade de backup do arquivo de destino. Toda operação do script que altera
+## Função....: __goto_create_bkp
+## Parametros: nenhum
+## Descrição.: Provê a funcionalidade de backup do arquivo de destino. Toda operação do script que altera
 ##            de alguma forma o conteúdo do arquivo, é feita uma cópia antes. O script mantém apenas uma
 ##            cópia.
 ##########################################################################################################
@@ -165,8 +169,11 @@ function __goto_create_bkp() {
 }
 
 ##########################################################################################################
-## Função...: __goto_add_destiny
-## Descrição: Adiciona uma entrada no arquivo de mapeamento.
+## Função....: __goto_add_destiny
+## Parametros: 
+##   $1 -> diretório de destino a ser mapeado
+##   $2 -> chave (apelido) usado no mapeamento
+## Descrição.: Adiciona uma entrada no arquivo de mapeamento.
 ##########################################################################################################
 function __goto_add_destiny() {
   local destMap="$(__goto_get_destiny_file)"
@@ -214,8 +221,10 @@ function __goto_add_destiny() {
 }
 
 ##########################################################################################################
-## Função...: __goto_remove_destiny
-## Descrição: Remove uma entrada do arquivo de mapeamento.
+## Função....: __goto_remove_destiny
+## Parametros:
+##   $1 -> nome da chave (apelido) que será removido
+## Descrição.: Remove uma entrada do arquivo de mapeamento.
 ##########################################################################################################
 function __goto_remove_destiny() {
   local destMap="$(__goto_get_destiny_file)"
@@ -241,8 +250,11 @@ function __goto_remove_destiny() {
 }
 
 ##########################################################################################################
-## Função...: __goto_update_destiny
-## Descrição: Atualiza um mapeamento.
+## Função....: __goto_update_destiny
+## Parametros:
+##   $1 -> nome da chave (apelido) que será atualizada
+##   $2 -> novo diretório que será atribuído a chave
+## Descrição.: Atualiza um mapeamento.
 ##########################################################################################################
 function __goto_update_destiny() {
   local destMap="$(__goto_get_destiny_file)"
@@ -285,8 +297,9 @@ function __goto_update_destiny() {
 }
 
 ##########################################################################################################
-## Função...: __goto_sort_destiny_file
-## Descrição: Ordena o conteúdo do arquivo de mepamento.
+## Função....: __goto_sort_destiny_file
+## Parametros: nenhum
+## Descrição.: Ordena o conteúdo do arquivo de mepamento.
 ##########################################################################################################
 function __goto_sort_destiny_file() {
   local destMap="$(__goto_get_destiny_file)"
