@@ -133,7 +133,7 @@ function __goto_purge_destinies() {
   while IFS="=" read -r chave destino || [[ -n $chave || -n $destino ]]; do
     [[ -d $destino ]] || {
       fileWasPurged="yes"
-      [[ createBkp == 'yes' ]] && {
+      [[ $createBkp == "yes" ]] && {
         __goto_create_bkp
         createBkp="no-more"
       }
