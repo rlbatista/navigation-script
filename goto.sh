@@ -106,7 +106,7 @@ function __goto_check_destinies() {
   local returnValue=0
   local mapFile="$(__goto_get_destiny_file)"
   local status="ok"
-  while IFS="=" read -r chave destino; do
+  while IFS="=" read -r chave destino || [[ -n $chave || -n $destino ]]; do
     [[ -d $destino ]] || {
       status="invalid"
       returnValue=1
@@ -130,7 +130,7 @@ function __goto_purge_destinies() {
   local mapFile="$(__goto_get_destiny_file)"
   local fileWasPurged="no"
   local createBkp="yes"
-  while IFS="=" read -r chave destino; do
+  while IFS="=" read -r chave destino || [[ -n $chave || -n $destino ]]; do
     [[ -d $destino ]] || {
       fileWasPurged="yes"
       [[ createBkp == 'yes' ]] && {
