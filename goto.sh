@@ -105,16 +105,16 @@ function __goto_get_destiny_file() {
 function __goto_check_destinies() {
   local returnValue=0
   local mapFile="$(__goto_get_destiny_file)"
-  local status=0
+  local status="ok"
   while IFS="=" read -r chave destino; do
     [[ -d $destino ]] || {
-      status=1
+      status="invalid"
       returnValue=1
       echo -e "O destino '$destino' apontado por '$chave' não foi encontrado"
     }
   done < "$mapFile"
 
-  [[ $status == 0 ]] && { 
+  [[ $status == "ok" ]] && { 
     echo "Todos os mapeamentos são válidos" 
   }
 
@@ -132,7 +132,7 @@ function __goto_purge_destinies() {
   local createBkp="yes"
   while IFS="=" read -r chave destino; do
     [[ -d $destino ]] || {
-      fileWasPurged=0
+      fileWasPurged="yes"
       [[ createBkp == 'yes' ]] && {
         __goto_create_bkp
         createBkp="no-more"
