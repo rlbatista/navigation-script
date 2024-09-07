@@ -39,11 +39,6 @@ function goto() {
     return $?
   }
 
-  [[ -d $1 ]] && {
-    cd $1
-    return 0 
-  }
-
   [[ $1 == '-a' || $1 == '--add' ]] && {
     __goto_create_bkp
     __goto_add_destiny $2 $3
@@ -65,6 +60,11 @@ function goto() {
   destino=$(awk -v dest="$1" -F'=' '$1 == dest {print $2}' $mapfile)
 
   [[ -z $destino ]] && {
+    [[ -d $1 ]] && {
+      cd $1
+      return 0 
+    }
+
     echo "Destino [$1] não encontrado" >&2
     return 2
   }
