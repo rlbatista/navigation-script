@@ -343,7 +343,7 @@ function __goto_completion()
   elif [[ $prev == '-u' || $prev == '--update' ]] ; then
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
   
-  elif [[ "(${registeredDestiniesAsArray[@]})" == *" ${prev} "* ]] ; then
+  elif [[ " ${registeredDestiniesAsArray[@]} " == *" ${prev} "* ]] ; then
     local folder=$(awk -F'=' -v alias="$prev" '$1 == alias {print $2}' $destFile)
     if [[ -d $folder ]]; then
       local destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
