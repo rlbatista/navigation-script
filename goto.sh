@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/opt/local/bin/bash
 
 ##########################################################################################################
 ## Função...: goto
@@ -91,7 +91,7 @@ function goto() {
 ##            dos diretórios. Caso queira mudar o local do arquivo, altere nesta função.
 ##########################################################################################################
 function __goto_get_destiny_file() {
-  echo "$HOME/scripts/destinos.map"
+  echo "$HOME/dev/scripts/destinos.map"
   return 0
 }
 
@@ -310,12 +310,33 @@ function __goto_sort_destiny_file() {
   return 0
 }
 
+
+##########################################################################################################
+## Função....: __goto_check_in_array
+## Parametros: 
+##   $1 -> palavra a ser pesquisada no array
+##   $2 -> array onde a pesquisa será realizada
+## Descrição.: Provê a funcionalidade de checagem se um texto informado encontra-se no array
+##########################################################################################################
+function __goto_check_in_array() {
+  local buscarPor="$1"
+  shift
+  local array=("$@")
+
+  for termo in "${array[@]}" ; do
+    [[ $buscarPor == $termo ]] && {
+      return 0
+    }
+  done
+
+  return 1
+}
+
 ##########################################################################################################
 ## Função...: __goto_completion
 ## Descrição: Provê a funciolidade "completar" para o script ao pressionar a tecla <TAB>.
 ##########################################################################################################
-function __goto_completion()
-{
+function __goto_completion() {
   local destFile="$(__goto_get_destiny_file)"
   [[ -f $destFile ]] || {
     touch $destFile
@@ -343,14 +364,17 @@ function __goto_completion()
   elif [[ $prev == '-u' || $prev == '--update' ]] ; then
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
   
-  elif [[ "(${registeredDestiniesAsArray[@]})" == *" ${prev} "* ]] ; then
+  # elif [[ "${registeredDestiniesAsArray[@]}" == *" ${prev} "* ]] ; then
+  elif __goto_check_in_array "$prev" "${registeredDestiniesAsArray[@]}" ; then
     local folder=$(awk -F'=' -v alias="$prev" '$1 == alias {print $2}' $destFile)
+
     if [[ -d $folder ]]; then
-      local destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
+      # local destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
+      local destinies=$(ls -d $folder/*/ 2> /dev/null | xargs -n1 basename 2>/dev/null)
       [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  $cur) ) || COMPREPLY=( )
     fi
 
-  else 
+  else
     COMPREPLY=( )
   fi
 
