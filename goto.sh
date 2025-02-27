@@ -25,7 +25,7 @@ function goto() {
   }
 
   [[ $1 == '-s' || $1 == '--show-destinies' ]] && {
-    bat $mapfile
+    __goto_show_destinies
     return 0 
   }
 
@@ -85,13 +85,44 @@ function goto() {
 }
 
 ##########################################################################################################
+## Função....: __goto_show_destinies
+## Parametros: nenhum
+## Descrição.: Função interna responsável por exibir todos os itens cadastrados no arquivo de destino
+##########################################################################################################
+function __goto_show_destinies() {
+  local mapFile="$(__goto_get_destiny_file)"
+  awk -F'=' 'BEGIN {
+      _width=0
+      _idx=0
+      BG_GRAY="\033[48;5;235m"
+      BG_DEFAULT="\033[49m"
+      RESET="\033[0m"
+    }
+    {
+      _keys[_idx] = $1
+      _values[_idx] = $2
+      _currentWidth = length($1)
+      _width = (_currentWidth > _width) ? _currentWidth : _width
+      _idx++
+    }
+    END {
+      for(fI = 0; fI < _idx; fI++) {
+        bg = (fI % 2 == 0) ? BG_DEFAULT : BG_GRAY
+        printf "%s%"_width"s\t%-80s%s\n", bg, _keys[fI], _values[fI], RESET
+      }
+    }
+  ' $mapFile
+  return 0
+} 
+
+##########################################################################################################
 ## Função....: __goto_get_destiny_file
 ## Parametros: nenhum
 ## Descrição.: Função interna que visa centralizar a localização do arquivo utilizado para o mapeamendo
 ##            dos diretórios. Caso queira mudar o local do arquivo, altere nesta função.
 ##########################################################################################################
 function __goto_get_destiny_file() {
-  echo "$HOME/dev/scripts/destinos.map"
+  echo -e "$HOME/dev/scripts/destinos.map"
   return 0
 }
 
