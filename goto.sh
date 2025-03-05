@@ -25,7 +25,7 @@ function goto() {
   }
 
   [[ $1 == '-s' || $1 == '--show-destinies' ]] && {
-    bat $mapfile
+    __goto_show_destinies
     return 0 
   }
 
@@ -81,6 +81,42 @@ function goto() {
   }
 
   cd $destino
+  return 0
+}
+
+##########################################################################################################
+## Função....: __goto_show_destinies
+## Parametros: nenhum
+## Descrição.: Função interna responsável por exibir os itens cadatrados no arquivo de destino
+##########################################################################################################
+function __goto_show_destinies() {
+  local mapFile="$(__goto_get_destiny_file)"
+  awk -F'=' '
+    BEGIN {
+      _keywidth = 0
+      _valuewidth = 0
+      _idx=0
+      BG_GRAY="\033[48;5;238m"
+      BD_DEFAULT="\033[49m"
+      RESET="\033[0m"
+    }
+
+    {
+      _keys[_idx] = $1
+      _values[_idx] = $2
+      _currentKeyWidth = length($1)
+      _currentValueWidth = length($2)
+      _keywidth = _currentKeyWidth > _keywidth ? _currentKeyWidth : _keywidth
+      _valuewidth = _currentValueWidth > _valuewidth ? _currentValueWidth : _valuewidth
+      _idx++
+    }
+
+    END {
+      for (i=0; i<_idx; i++) {
+        bg = i % 2 == 0 ? BG_DEFAULT : BG_GRAY
+        printf " %s%" _keywidth "s     %-"_valuewidth"s%s \n", bg, _keys[i],_values[i], RESET
+      }
+    }' $mapFile
   return 0
 }
 
