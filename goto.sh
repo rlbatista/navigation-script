@@ -8,8 +8,8 @@
 ##########################################################################################################
 function goto() {
   [[ $# == 0 ]] && {
-    __goto_manual
-    return 1
+    __goto_menu_destinies
+    return 0
   }
 
   [[ $1 == '-h' || $1 == '--help' ]] && {
@@ -81,6 +81,61 @@ function goto() {
   }
 
   cd $destino
+  return 0
+}
+
+##########################################################################################################
+## Função....: __goto_menu_destinies
+## Parametros: nenhum
+## Descrição.: Função interna responsável por exibir uma lista numerada com os itens mapeados para que o
+##             usuário informe um número e consiga navegar para o destino solicitados
+##########################################################################################################
+function __goto_menu_destinies() {
+  local mapFile="$(__goto_get_destiny_file)"
+  local destinies=()
+  local keys=()
+  local idx=1
+  local maxKeyLength=0
+  local maxValueLength=0
+
+  while IFS='=' read -r key value; do
+    destinies+=("$value")
+    keys+=("$key")
+    (( ${#key} > maxKeyLength )) && maxKeyLength=${#key}
+    (( ${#value} > maxValueLength )) && maxValueLength=${#value}
+  done < "$mapFile"
+
+  local BG_GRAY="\033[48;5;235m"
+  local BG_DEFAULT="\033[49m"
+  local RESET="\033[0m"
+  for i in "${!keys[@]}"; do
+    local bg
+    if (( i % 2 == 0 )); then
+      bg=$BG_DEFAULT
+    else
+      bg=$BG_GRAY
+    fi
+    printf "%b%2d) %-*s -> %-*s%b\n" "$bg" $((i+1)) $maxKeyLength "${keys[$i]}" $maxValueLength "${destinies[$i]}" "$RESET"
+  done
+
+  echo ""
+  read -p "Para onde deseja ir ? (0 para cancelar): " choice
+
+  if [[ $choice -gt 0 && $choice -le ${#destinies[@]} ]]; then
+    local destino="${destinies[$((choice-1))]}"
+    cd "$destino" || {
+      echo "Diretório [$destino] não encontrado" >&2
+      return 4
+    }
+
+  elif [[ choice -eq 0 ]]; then 
+    return 0
+
+  else
+    echo "Escolha inválida" >&2
+    return 1
+  fi
+
   return 0
 }
 
