@@ -8,7 +8,7 @@
 ##########################################################################################################
 function goto() {
   [[ $# == 0 ]] && {
-    __goto_manual
+    __goto_choose_destiny
     return 1
   }
 
@@ -82,6 +82,47 @@ function goto() {
 
   cd $destino
   return 0
+}
+
+##########################################################################################################
+## Função....: __goto_choose_destiny
+## Parametros: nenhum
+## Descrição.: Função interna responsável por exibir os itens cadatrados no arquivo de destino em forma de
+##             menu
+##########################################################################################################
+
+function __goto_choose_destiny() {
+  local mapFile="$(__goto_get_destiny_file)"
+
+  # Verifica se o arquivo de mapeamentos existe
+  if [ ! -f "$mapFile" ]; then
+      echo "Arquivo de mapeamentos não encontrado!"
+      return 1
+  fi
+  # Exibe as opções de mapeamentos
+  mapfile -t opcoes < "$mapFile"
+  # Exibe o menu interativo com as opções
+  PS3="Escolha um diretório para ir: "
+  select opt in "${opcoes[@]}" "Sair"; do
+      case $opt in
+          "Sair")
+              echo "Saindo..."
+              break
+              ;;
+          *)
+              # Extrai o diretório da opção selecionada
+              diretorio=$(echo "$opt" | cut -d '=' -f 2)
+              # Verifica se o diretório existe
+              if [ -d "$diretorio" ]; then
+                  echo "Navegando para $diretorio..."
+                  cd "$diretorio" || echo "Não foi possível navegar para o diretório."
+              else
+                  echo "O diretório '$diretorio' não existe!"
+              fi
+              break
+              ;;
+      esac
+  done
 }
 
 ##########################################################################################################
