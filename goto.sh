@@ -70,10 +70,12 @@ function goto() {
   }
   
   destino=${destino/\~/$HOME}
-
-  [[ -n $2 ]] && {
-    destino="$destino/$2"
-  }
+  
+  shift
+  while [[ $# -gt 0 ]]; do
+    destino="$destino/$1"
+    shift
+  done
 
   [[ ! -d $destino ]] && {
     echo "Diretório [$destino] não encontrado" >&2
@@ -455,18 +457,30 @@ function __goto_completion() {
   elif [[ $prev == '-u' || $prev == '--update' ]] ; then
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
   
-  # elif [[ "${registeredDestiniesAsArray[@]}" == *" ${prev} "* ]] ; then
-  elif __goto_check_in_array "$prev" "${registeredDestiniesAsArray[@]}" ; then
-    local folder=$(awk -F'=' -v alias="$prev" '$1 == alias {print $2}' $destFile)
-
-    if [[ -d $folder ]]; then
-      # local destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
-      local destinies=$(ls -d $folder/*/ 2> /dev/null | xargs -n1 basename 2>/dev/null)
-      [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  $cur) ) || COMPREPLY=( )
+  else 
+    if [[ COMP_CWORD -eq 2 ]]; then
+      if __goto_check_in_array "$prev" "${registeredDestiniesAsArray[@]}" ; then
+        local folder=$(awk -F'=' -v alias="$prev" '$1 == alias {print $2}' $destFile)
+        if [[ -d $folder ]]; then
+          # local destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
+          local destinies=$(ls -d $folder/*/ 2> /dev/null | xargs -n1 basename 2>/dev/null)
+          [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  $cur) ) || COMPREPLY=( )
+        fi
+      else
+        COMPREPLY=( )
+      fi
+    else
+      if __goto_check_in_array "${COMP_WORDS[1]}" "${registeredDestiniesAsArray[@]}" ; then
+        local folder=$(awk -F'=' -v alias="${COMP_WORDS[1]}" '$1 == alias {print $2}' $destFile)
+        for ((i=2; i<COMP_CWORD; i++)); do
+          folder="$folder/${COMP_WORDS[i]}"
+        done
+        local destinies=$(ls -d $folder/*/ 2> /dev/null | xargs -n1 basename 2>/dev/null)
+        [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  $cur) ) || COMPREPLY=( )
+      else 
+        COMPREPLY=( )
+      fi
     fi
-
-  else
-    COMPREPLY=( )
   fi
 
   return 0
