@@ -60,20 +60,21 @@ function goto() {
   destino=$(awk -v dest="$1" -F'=' '$1 == dest {print $2}' $mapfile)
 
   [[ -z $destino ]] && {
-    [[ -d $1 ]] && {
-      cd $1
-      return 0 
+    [[ ! -d $1 ]] && {
+      echo "Destino [$1] não encontrado" >&2
+      return 2
     }
 
-    echo "Destino [$1] não encontrado" >&2
-    return 2
+    destino="$1"
   }
   
   destino=${destino/\~/$HOME}
 
-  [[ -n $2 ]] && {
-    destino="$destino/$2"
-  }
+  shift
+  while [[ $# -gt 0 ]]; do
+    destino="$destino/$1"
+    shift
+  done
 
   [[ ! -d $destino ]] && {
     echo "Diretório [$destino] não encontrado" >&2
@@ -419,16 +420,29 @@ function __goto_completion()
 
   elif [[ $prev == '-u' || $prev == '--update' ]] ; then
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
-  
-  elif [[ " ${registeredDestiniesAsArray[@]} " == *" ${prev} "* ]] ; then
-    local folder=$(awk -F'=' -v alias="$prev" '$1 == alias {print $2}' $destFile)
-    if [[ -d $folder ]]; then
-      local destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
-      [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  $cur) ) || COMPREPLY=( )
-    fi
 
-  else 
-    COMPREPLY=( )
+  else
+    local mapedItem=${COMP_WORDS[1]}
+    local folder
+    if [[ " ${registeredDestiniesAsArray[@]} " == *" ${mapedItem} "* ]]; then
+      folder=$(awk -F'=' -v alias="$mapedItem" '$1 == alias {print $2}' $destFile)
+    else
+      folder="$mapedItem"
+    fi
+    
+    if [[ -d $folder ]]; then
+      for ((i=2; i < COMP_CWORD; i++)); do
+        folder="$folder/${COMP_WORDS[i]}"
+      done
+
+      if [[ -d $folder ]]; then
+        local destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
+        [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  $cur) ) || COMPREPLY=( )
+      fi
+
+    else
+      COMPREPLY=( )
+    fi
   fi
 
   return 0
