@@ -337,7 +337,7 @@ function __goto_remove_destiny() {
     return 128
   }
 
-  sed -i "/^$destAlias=/d" $destMap
+  sed -i '' "/^$destAlias=/d" $destMap
   echo "Destino [$destAlias] removido"
   return 0
 }
