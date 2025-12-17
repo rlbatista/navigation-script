@@ -169,7 +169,7 @@ function __goto_show_destinies() {
 ##            dos diretórios. Caso queira mudar o local do arquivo, altere nesta função.
 ##########################################################################################################
 function __goto_get_destiny_file() {
-  echo "$HOME/scripts/destinos.map"
+  echo "$HOME/scripts/goto/destinos.map"
   return 0
 }
 
