@@ -95,11 +95,6 @@ function goto() {
 function __goto_choose_destiny() {
   local mapFile="$(__goto_get_destiny_file)"
 
-  # Verifica se o arquivo de mapeamentos existe
-  if [ ! -f "$mapFile" ]; then
-      echo "Arquivo de mapeamentos não encontrado!"
-      return 1
-  fi
   # Exibe as opções de mapeamentos
   mapfile -t opcoes < "$mapFile"
   # Exibe o menu interativo com as opções
@@ -169,7 +164,11 @@ function __goto_show_destinies() {
 ##            dos diretórios. Caso queira mudar o local do arquivo, altere nesta função.
 ##########################################################################################################
 function __goto_get_destiny_file() {
-  echo "$HOME/scripts/goto/destinos.map"
+  local mapFile="${GOTO_DESTINY_FILE:-$HOME/.goto-destinies}"
+  [[ -f $mapFile ]] || {
+    touch $mapFile
+  }
+  echo "$mapFile"
   return 0
 }
 
@@ -237,11 +236,6 @@ function __goto_purge_destinies() {
 function __goto_create_bkp() {
   local destMap="$(__goto_get_destiny_file)"
   local bkpFile="$(__goto_get_destiny_file)~"
-
-  [[ -f $destMap ]] || {
-    touch $destMap
-  }
-
   cp $destMap $bkpFile
   return 0
 }
@@ -277,10 +271,6 @@ function __goto_add_destiny() {
     __goto_manual_use
     __goto_manual_add_destiny
     return 16
-  }
-
-  [[ -f $destMap ]] || {
-    touch $destMap
   }
 
   grep -q "^$destAlias=" $destMap && {
@@ -395,10 +385,6 @@ function __goto_sort_destiny_file() {
 function __goto_completion()
 {
   local destFile="$(__goto_get_destiny_file)"
-  [[ -f $destFile ]] || {
-    touch $destFile
-  }
-
   local cur=${COMP_WORDS[COMP_CWORD]}
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local registeredDestinies="$(awk -F'=' '{print $1}' $destFile)"
