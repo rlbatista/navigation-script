@@ -57,6 +57,11 @@ function goto() {
     return $?
   }
 
+  [[ $1 == '-m' || $1 == '--map-file' ]] && {
+    echo $(__goto_get_destiny_file)
+    return 0
+  }
+
   destino=$(awk -v dest="$1" -F'=' '$1 == dest {print $2}' $mapfile)
 
   [[ -z $destino ]] && {
@@ -389,7 +394,7 @@ function __goto_completion()
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local registeredDestinies="$(awk -F'=' '{print $1}' $destFile)"
   local registeredDestiniesAsArray=($registeredDestinies)
-  local options="-h --help --e --edit -s --show-destinies -c --check-destinies -p --purge-destinies -a --add -d --delete -u --update"
+  local options="-h --help --e --edit -s --show-destinies -c --check-destinies -p --purge-destinies -a --add -d --delete -u --update -m --map-file"
 
   if [[ $prev == 'goto' && ! $cur =~ ^- ]] ; then
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
@@ -513,6 +518,14 @@ function __goto_manual_update_destiny() {
   return 0
 }
 
+function __goto_manual_show_map_file() {
+  echo -e "\nExibe o local do arquivo de destinos:"
+  echo -e "\tgoto -m|--map-file"
+  echo -e "\t* O arquivo é definido pela variável de ambiente: GOTO_DESTINY_FILE"
+  echo -e "\t  e caso esta não exista, utiliza o arquivo padrão: \$HOME/.goto-destinies"
+  echo -e "\t* Cria o arquivo se não existir"
+}
+
 function __goto_manual_show_manual() {
   echo -e "\nExibe o manual:"
   echo -e "\tgoto -h|--help"
@@ -530,6 +543,7 @@ function __goto_manual() {
   __goto_manual_add_destiny
   __goto_manual_delete_destiny
   __goto_manual_update_destiny
+  __goto_manual_show_map_file
   __goto_manual_show_manual
   return 0
 }
