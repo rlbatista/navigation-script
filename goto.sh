@@ -403,7 +403,7 @@ function __goto_completion()
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local registeredDestinies="$(awk -F'=' '{print $1}' $destFile)"
   local registeredDestiniesAsArray=($registeredDestinies)
-  local options="-h --help --e --edit -s --show-destinies -c --check-destinies -p --purge-destinies -a --add -d --delete"
+  local options="-h --help --e --edit -s --show-destinies -c --check-destinies -p --purge-destinies -a --add -d --delete -u --update"
 
   if [[ $prev == 'goto' && ! $cur =~ ^- ]] ; then
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
