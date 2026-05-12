@@ -26,7 +26,12 @@ function goto() {
 
   [[ $1 == '-s' || $1 == '--show-destinies' ]] && {
     __goto_show_destinies
-    return 0 
+    return 0
+  }
+
+  [[ $1 == '-g' || $1 == '--get' ]] && {
+    __goto_get_destiny $2
+    return $?
   }
 
   [[ $1 == '-c' || $1 == '--check-destinies' ]] && {
@@ -57,7 +62,12 @@ function goto() {
     return $?
   }
 
-  destino=$(awk -v dest="$1" -F'=' '$1 == dest {print $2}' $mapfile)
+  [[ $1 == '-m' || $1 == '--map-file' ]] && {
+    echo $(__goto_get_destiny_file)
+    return 0
+  }
+
+  destino=$(__goto_get_destiny $1 2> /dev/null)
 
   [[ -z $destino ]] && {
     [[ ! -d $1 ]] && {
@@ -99,7 +109,7 @@ function __goto_choose_destiny() {
   mapfile -t opcoes < "$mapFile"
   # Exibe o menu interativo com as opções
   PS3="Escolha um diretório para ir: "
-  select opt in "${opcoes[@]}" "Sair"; do
+  select opt in "Sair" "${opcoes[@]}"; do
       case $opt in
           "Sair")
               echo "Saindo..."
@@ -154,6 +164,28 @@ function __goto_show_destinies() {
         printf " %s%" _keywidth "s     %-"_valuewidth"s%s \n", bg, _keys[i],_values[i], RESET
       }
     }' $mapFile
+  return 0
+}
+
+##########################################################################################################
+## Função....: __goto_get_destiny
+## Parametros: nome da chave (apelido) do destino a ser obtido
+## Descrição.: Função interna responsável por obter o destino correspondente a uma chave
+##########################################################################################################
+function __goto_get_destiny() {
+  local mapFile="$(__goto_get_destiny_file)"
+  local destAlias=$1
+  [[ -z $destAlias ]] && {
+    echo 'Informe o apelido do destino' >&2
+    __goto_manual_use
+    __goto_manual_get_destiny
+    return 1
+  }
+  local destino=$(awk -v dest="$destAlias" -F'=' '$1 == dest {print $2}' $mapFile)
+  [[ -n $destino ]] && echo $destino || {
+    echo "" >&2 # Se o destino não for encontrado, é exibida uma mensagem em branco e retornado um código de erro
+    return 2
+  }
   return 0
 }
 
@@ -407,6 +439,9 @@ function __goto_completion()
   elif [[ $prev == '-u' || $prev == '--update' ]] ; then
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
 
+  elif [[ $prev == '-g' ]] || [[ $prev == '--get' ]] ; then
+    COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
+
   else
     local mapedItem=${COMP_WORDS[1]}
     local folder
@@ -469,6 +504,13 @@ function __goto_manual_show_directories() {
   return 0
 }
 
+function __goto_manual_get_destiny() {
+  echo -e "\nObtém o diretório mapeado correspondente a um apelido:"
+  echo -e "\tgoto -g|--get <apelido>"
+  echo -e "\t\t<apelido> - apelido do diretório mapeado (use <TAB> para completar)"
+  return 0
+}
+
 function __goto_manual_check_destinies() {
   echo -e "\nCheca se todos os diretórios mapeados ainda existem:"
   echo -e "\tgoto -c|--check-destinies"
@@ -524,6 +566,7 @@ function __goto_manual() {
   __goto_manual_use
   __goto_manual_browse_directory
   __goto_manual_show_directories
+  __goto_manual_get_destiny
   __goto_manual_check_destinies
   __goto_manual_purge_destinies
   __goto_manual_edit_destinies
