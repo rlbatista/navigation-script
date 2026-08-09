@@ -62,6 +62,11 @@ function goto() {
     return $?
   }
 
+  [[ $1 == '-q' || $1 == '--question' ]] && {
+    __goto_question_folder $2
+    return $?
+  }
+
   [[ $1 == '-m' || $1 == '--map-file' ]] && {
     echo $(__goto_get_destiny_file)
     return 0
@@ -397,6 +402,32 @@ function __goto_update_destiny() {
 }
 
 ##########################################################################################################
+## Função....: __goto_question_folder
+## Parametros: (opcional) diretório que se deseja verificar
+## Descrição.: Verifica se o diretório informado está mapeado.
+##             Se não for informado um parametro, o diretório atual é utilizado.
+##########################################################################################################
+
+function __goto_question_folder() {
+  local destMap="$(__goto_get_destiny_file)"
+  local amIInMapping="$1"
+
+  [[ -z $amIInMapping ]] && {
+    amIInMapping="$(pwd)"
+  } || {
+    amIInMapping="$(realpath $amIInMapping)"
+  }
+
+  grep -q "^.*=$amIInMapping$" $destMap && {
+    echo "$amIInMapping está mapeado"
+    return 0
+  } || {
+    echo "$amIInMapping não está mapeado"
+    return 1
+  }
+}
+
+##########################################################################################################
 ## Função....: __goto_sort_destiny_file
 ## Parametros: nenhum
 ## Descrição.: Ordena o conteúdo do arquivo de mepamento.
@@ -434,6 +465,9 @@ function __goto_completion()
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
 
   elif [[ $prev == '-a' || $prev == '--add' ]] ; then
+    COMPREPLY=( $(compgen -d -- $cur) )
+
+  elif [[ $prev == '-q' || $prev == '--question' ]] ; then
     COMPREPLY=( $(compgen -d -- $cur) )
 
   elif [[ $prev == '-u' || $prev == '--update' ]] ; then
@@ -555,6 +589,22 @@ function __goto_manual_update_destiny() {
   return 0
 }
 
+function __goto_manual_question_folder() {
+  echo -e "\nVerifica se existe um mapeamento definido para o diretório atual"
+  echo -e "\tgoto -q|--question [diretório]"
+  echo -e "\t\t[diretorio] - (opcional) diretório que se deseja verificar."
+  echo -e "\t* Se nenhum diretório for informado, será utilizado o diretório atual"
+  return 0
+}
+
+function __goto_manual_show_map_file() {
+  echo -e "\nExibe o local do arquivo de destinos:"
+  echo -e "\tgoto -m|--map-file"
+  echo -e "\t* O arquivo é definido pela variável de ambiente: GOTO_DESTINY_FILE"
+  echo -e "\t  e caso esta não exista, utiliza o arquivo padrão: \$HOME/.goto-destinies"
+  echo -e "\t* Cria o arquivo se não existir"
+}
+
 function __goto_manual_show_manual() {
   echo -e "\nExibe o manual:"
   echo -e "\tgoto -h|--help"
@@ -573,6 +623,8 @@ function __goto_manual() {
   __goto_manual_add_destiny
   __goto_manual_delete_destiny
   __goto_manual_update_destiny
+  __goto_manual_question_folder
+  __goto_manual_show_map_file
   __goto_manual_show_manual
   return 0
 }
