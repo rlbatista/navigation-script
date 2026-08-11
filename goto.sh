@@ -62,6 +62,12 @@ function goto() {
     return $?
   }
 
+  [[ $1 == '-r' || $1 == '--rename' ]] && {
+    __goto_create_bkp
+    __goto_rename_destiny $2 $3
+    return $?
+  }
+
   [[ $1 == '-q' || $1 == '--question' ]] && {
     __goto_question_folder $2
     return $?
@@ -314,7 +320,7 @@ function __goto_add_destiny() {
     echo "Destino [$destAlias] já existe" >&2
     echo "Use -u --update para atualizar o destino" >&2
     __goto_manual_use
-    __goto_manual_add_destiny    
+    __goto_manual_add_destiny
     return 32
   }
 
@@ -402,6 +408,52 @@ function __goto_update_destiny() {
 }
 
 ##########################################################################################################
+## Função....: __goto_rename_destiny
+## Parametros:
+##   $1 -> nome da chave (apelido) que será renomeada
+##   $2 -> nova chave (apelido) que será utlizada no mapeamento
+## Descrição.: Renomeia a chave (apelido) de mapeamento.
+##########################################################################################################
+function __goto_rename_destiny() {
+  local destMap="$(__goto_get_destiny_file)"
+  local oldAlias="$1"
+  local newAlias="$2"
+
+  [[ -z "$oldAlias" ]] && {
+    echo "Necessário informar qual alias será renomeado"
+    __goto_manual_use
+    __goto_manual_rename_destiny
+    return 4096
+  }
+
+  [[ -z "$newAlias" ]] && {
+    echo "Necessário informar o novo alias"
+    __goto_manual_use
+    __goto_manual_rename_destiny
+    return 8192
+  }
+
+  grep -q "^$oldAlias=" $destMap || {
+    echo "Destino [$oldAlias] não encontrado" >&2
+    __goto_manual_use
+    __goto_manual_rename_destiny
+    return 2048
+  }
+
+  local destAlias=$(__goto_get_destiny "$oldAlias")
+  echo "destino encontrado: $destAlias"
+  [[ -z $destAlias ]] && {
+    echo "Não foi possível renomear [$destAlias]. Destino não existe"
+    return 16384
+  }
+
+  __goto_remove_destiny $oldAlias 2>&1 > /dev/null
+  __goto_add_destiny $destAlias $newAlias 2>&1 > /dev/null
+  echo "Destino [$oldAlias] renomeado para [$newAlias]"
+  return 0
+}
+
+##########################################################################################################
 ## Função....: __goto_question_folder
 ## Parametros: (opcional) diretório que se deseja verificar
 ## Descrição.: Verifica se o diretório informado está mapeado.
@@ -471,6 +523,9 @@ function __goto_completion()
     COMPREPLY=( $(compgen -d -- $cur) )
 
   elif [[ $prev == '-u' || $prev == '--update' ]] ; then
+    COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
+
+  elif [[ $prev == '-r' || $prev == '--rename' ]] ; then
     COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
 
   elif [[ $prev == '-g' ]] || [[ $prev == '--get' ]] ; then
@@ -589,6 +644,14 @@ function __goto_manual_update_destiny() {
   return 0
 }
 
+function __goto_manual_rename_destiny() {
+  echo -e "\nRenomeia um destino:"
+  echo -e "\tgoto -r|--rename <antigo> <novo>"
+  echo -e "\t\t<antigo> - antigo apelido cadastrado"
+  echo -e "\t\t<novo> - novo apelido que substituirá o <antigo>"
+  echo -e "\t* Se o apelido antigo não existir, é exibida uma mensagem de erro"
+}
+
 function __goto_manual_question_folder() {
   echo -e "\nVerifica se existe um mapeamento definido para o diretório atual"
   echo -e "\tgoto -q|--question [diretório]"
@@ -623,6 +686,7 @@ function __goto_manual() {
   __goto_manual_add_destiny
   __goto_manual_delete_destiny
   __goto_manual_update_destiny
+  __goto_manual_rename_destiny
   __goto_manual_question_folder
   __goto_manual_show_map_file
   __goto_manual_show_manual
