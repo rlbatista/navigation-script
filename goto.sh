@@ -203,8 +203,9 @@ function __goto_get_destiny() {
 ##########################################################################################################
 ## Função....: __goto_get_destiny_file
 ## Parametros: nenhum
-## Descrição.: Função interna que visa centralizar a localização do arquivo utilizado para o mapeamendo
-##            dos diretórios. Caso queira mudar o local do arquivo, altere nesta função.
+## Descrição.: Função interna que visa garantir a existencia do arquivo de mapeamento. A função busca o
+##            arquivo apontado pela variável de ambiente GOTO_DESTINY_FILE e caso ela não exista, o padrão
+##            $HOME/.goto-destinies é utilizado.
 ##########################################################################################################
 function __goto_get_destiny_file() {
   local mapFile="${GOTO_DESTINY_FILE:-$HOME/.goto-destinies}"
