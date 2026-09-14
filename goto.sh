@@ -141,6 +141,11 @@ function __goto_generate_return_code() {
     ERR_DIRECTORY_ACCESS_DENIED) return 31;;
     ERR_DIRECTORY_NOT_FOUND) return 32;;
     ERR_DIRECTORY_MISSING_ON_COMMAND) return 33;;
+    
+    ERR_FILE_ALREADY_EXISTS) return 40;;
+    ERR_FILE_ACCESS_DENIED) return 41;;
+    ERR_FILE_NOT_VALID) return 42;;
+    ERR_FILE_CANT_COPY) return 43;;
     *) return 1;;
   esac
 }
@@ -326,16 +331,58 @@ function __goto_purge_destinies() {
 
 ##########################################################################################################
 ## Função....: __goto_create_bkp
-## Parametros: nenhum
+## Parametros: $1 -> (opcional) - Nome do arquivo que será utilizado como destino do backup.
+##             $2 -> (opcional) - recebe -f ou --force para permitir a sobrescrita do arquivo de destino.
 ## Descrição.: Provê a funcionalidade de backup do arquivo de destino. Toda operação do script que altera
 ##            de alguma forma o conteúdo do arquivo, é feita uma cópia antes. O script mantém apenas uma
-##            cópia.
+##            cópia. Se o arquivo destino já existir, é exibida uma mensagem de erro o backup é cancelado.
 ##########################################################################################################
 function __goto_create_bkp() {
-  local destMap="$(__goto_get_destiny_file)"
-  local bkpFile="$(__goto_get_destiny_file)~"
-  cp $destMap $bkpFile
-  return 0
+  local bkpSourceFile="$(__goto_get_destiny_file)"
+  local bkpDestinyFile="${1:-$(__goto_get_destiny_file)~}"
+  local overwrite="no"
+  [[ ${2,,} == '-f' || ${2,,} == '--force' || "$bkpSourceFile~" == "$bkpDestinyFile" ]] && {
+    overwrite="yes"
+  }
+
+  [[ -e "$bkpDestinyFile" ]] && {
+    [[ $overwrite == 'no' ]] && {
+      echo -e "Não foi possível criar o backup. Arquivo $bkpDestinyFile já existe no destino"
+      __goto_generate_return_code ERR_FILE_ALREADY_EXISTS
+      return $?
+    }
+
+    [[ ! -f "$bkpDestinyFile" ]] && {
+      echo -e "Não foi possível criar o backup. $bkpDestinyFile não é um arquivo válido"
+      __goto_generate_return_code ERR_FILE_NOT_VALID
+      return $?
+    }
+
+    [[ ! -w "$bkpDestinyFile" ]] && {
+    echo -e "Não foi possível criar o backup. Acesso negado em $bkpDestinyFile"
+    __goto_generate_return_code ERR_FILE_ACCESS_DENIED
+    return $?
+    }
+  }
+
+  [[ ! -e "$bkpDestinyFile" ]] && {
+    local bkpDestinyDir
+    bkpDestinyDir="$(dirname $bkpDestinyFile)"
+    [[ ! -w "$bkpDestinyDir" || ! -x "$bkpDestinyDir" ]] && {
+      echo -e "Não foi possível criar o backup. Acesso negado em $bkpDestinyFile"
+      __goto_generate_return_code ERR_FILE_ACCESS_DENIED
+      return $?
+    }
+  }
+
+  if ! \cp "$bkpSourceFile" "$bkpDestinyFile"; then
+    echo -e "Não foi possível criar o backup.\nErro desconhecido durante a copia de $bkpSourceFile para $bkpDestinyFile"
+    __goto_generate_return_code ERR_FILE_CANT_COPY
+    return $?
+  fi
+
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
