@@ -9,24 +9,27 @@
 function goto() {
   [[ $# == 0 ]] && {
     __goto_choose_destiny
-    return 1
+    return $?
   }
 
   [[ $1 == '-h' || $1 == '--help' ]] && {
     __goto_manual
-    return 0
+    __goto_generate_return_code OK
+    return $?
   }
 
   local mapfile="$(__goto_get_destiny_file)"
 
   [[ $1 == '-e' || $1 == '--edit' ]] && {
     vi $mapfile
-    return 0
+    __goto_generate_return_code OK
+    return $?
   }
 
   [[ $1 == '-s' || $1 == '--show-destinies' ]] && {
     __goto_show_destinies
-    return 0
+    __goto_generate_return_code OK
+    return $?
   }
 
   [[ $1 == '-g' || $1 == '--get' ]] && {
@@ -75,7 +78,8 @@ function goto() {
 
   [[ $1 == '-m' || $1 == '--map-file' ]] && {
     echo $(__goto_get_destiny_file)
-    return 0
+    __goto_generate_return_code OK
+    return $?
   }
 
   destino=$(__goto_get_destiny $1 2> /dev/null)
@@ -83,7 +87,8 @@ function goto() {
   [[ -z $destino ]] && {
     [[ ! -d $1 ]] && {
       echo "Destino [$1] não encontrado" >&2
-      return 2
+      __goto_generate_return_code ERR_DESTINY_NOT_FOUND
+      return $?
     }
 
     destino="$1"
@@ -99,11 +104,45 @@ function goto() {
 
   [[ ! -d $destino ]] && {
     echo "Diretório [$destino] não encontrado" >&2
-    return 4
+    __goto_generate_return_code ERR_DIRECTORY_NOT_FOUND
+    return $?
   }
 
   cd $destino
-  return 0
+    __goto_generate_return_code OK
+    return $?
+}
+
+##########################################################################################################
+## Função....: __goto_generate_return_code
+## Parametros: $1 -> texto que representa o código que deve ser gerado para retorno
+## Descrição.: retorna um códgo baseado no texto informado em $1. A ideia da função é dar mais semantica
+##             para o retorno das funções melhorando a legibilidade. Essa função gera um código de retorno
+##             que não deve ser retornada diretamente mas sim, após chamar essa função, deve ser retornado
+##             o valor de $?:
+##             Exemplo:
+##               function fazAlgo() {
+##                 // faz alguma coisa que gera um erro por exemplo
+##                 __goto_generate_return_code ERROR_CODE_GENERICO # essa linha apenas gera o código
+##                 return $?  # Essa linha de fato retorna o código gerado
+##               }
+##########################################################################################################
+function __goto_generate_return_code() {
+  case "${1:-}" in
+    OK) return 0;;
+
+    ERR_DESTINY_NOT_FOUND) return 10;;
+
+    ERR_ALIAS_MISSING_ON_COMMAND) return 20;;
+    ERR_ALIAS_NOT_FOUND) return 21;;
+    ERR_ALIAS_ALREADY_EXISTS) return 22;;
+    
+    ERR_DIRECTORY_NOT_MAPPED) return 30;;
+    ERR_DIRECTORY_ACCESS_DENIED) return 31;;
+    ERR_DIRECTORY_NOT_FOUND) return 32;;
+    ERR_DIRECTORY_MISSING_ON_COMMAND) return 33;;
+    *) return 1;;
+  esac
 }
 
 ##########################################################################################################
@@ -112,7 +151,6 @@ function goto() {
 ## Descrição.: Função interna responsável por exibir os itens cadatrados no arquivo de destino em forma de
 ##             menu
 ##########################################################################################################
-
 function __goto_choose_destiny() {
   local mapFile="$(__goto_get_destiny_file)"
 
@@ -121,25 +159,34 @@ function __goto_choose_destiny() {
   # Exibe o menu interativo com as opções
   PS3="Escolha um diretório para ir: "
   select opt in "Sair" "${opcoes[@]}"; do
-      case $opt in
-          "Sair")
-              echo "Saindo..."
-              break
-              ;;
-          *)
-              # Extrai o diretório da opção selecionada
-              diretorio=$(echo "$opt" | cut -d '=' -f 2)
-              # Verifica se o diretório existe
-              if [ -d "$diretorio" ]; then
-                  echo "Navegando para $diretorio..."
-                  cd "$diretorio" || echo "Não foi possível navegar para o diretório."
-              else
-                  echo "O diretório '$diretorio' não existe!"
-              fi
-              break
-              ;;
-      esac
+    case $opt in
+      "Sair")
+        echo "Saindo..."
+        __goto_generate_return_code OK
+        return $?
+        ;;
+      *)
+        # Extrai o diretório da opção selecionada
+        diretorio=$(echo "$opt" | cut -d '=' -f 2)
+        # Verifica se o diretório existe
+        if [ -d "$diretorio" ]; then
+          echo "Navegando para $diretorio..."
+          cd "$diretorio" || {
+            echo "Não foi possível navegar para o diretório selecionado" >&2
+            __goto_generate_return_code ERR_DIRECTORY_ACCESS_DENIED
+            return $?
+          }
+          break
+        else
+          echo "O diretório '$diretorio' não existe!" >&2
+          __goto_generate_return_code ERR_DIRECTORY_NOT_FOUND
+          return $?
+        fi
+        ;;
+    esac
   done
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
@@ -175,7 +222,8 @@ function __goto_show_destinies() {
         printf " %s%" _keywidth "s     %-"_valuewidth"s%s \n", bg, _keys[i],_values[i], RESET
       }
     }' $mapFile
-  return 0
+    __goto_generate_return_code OK
+    return $?
 }
 
 ##########################################################################################################
@@ -190,14 +238,17 @@ function __goto_get_destiny() {
     echo 'Informe o apelido do destino' >&2
     __goto_manual_use
     __goto_manual_get_destiny
-    return 1
+    __goto_generate_return_code ERR_ALIAS_MISSING_ON_COMMAND
+    return $?
   }
   local destino=$(awk -v dest="$destAlias" -F'=' '$1 == dest {print $2}' $mapFile)
   [[ -n $destino ]] && echo $destino || {
     echo "" >&2 # Se o destino não for encontrado, é exibida uma mensagem em branco e retornado um código de erro
-    return 2
+    __goto_generate_return_code ERR_ALIAS_NOT_FOUND
+    return $?
   }
-  return 0
+    __goto_generate_return_code OK
+    return $?
 }
 
 ##########################################################################################################
@@ -213,7 +264,8 @@ function __goto_get_destiny_file() {
     touch $mapFile
   }
   echo "$mapFile"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
@@ -224,14 +276,14 @@ function __goto_get_destiny_file() {
 ##            que está tudo correto.
 ##########################################################################################################
 function __goto_check_destinies() {
-  local returnValue=0
+  local returnValue=OK
   local mapFile="$(__goto_get_destiny_file)"
   local status="ok"
   while IFS="=" read -r chave destino || [[ -n $chave || -n $destino ]]; do
     [[ -d $destino ]] || {
       status="invalid"
-      returnValue=1
-      echo -e "O destino '$destino' apontado por '$chave' não foi encontrado"
+      returnValue=ERR_DIRECTORY_NOT_FOUND
+      echo -e "O destino '$destino' apontado por '$chave' não foi encontrado" >&2
     }
   done < "$mapFile"
 
@@ -239,7 +291,8 @@ function __goto_check_destinies() {
     echo "Todos os mapeamentos são válidos" 
   }
 
-  return $returnValue
+  __goto_generate_return_code $returnValue
+  return $?
 }
 
 ##########################################################################################################
@@ -267,7 +320,8 @@ function __goto_purge_destinies() {
     echo -e "Arquivo de destinos expurgado com sucesso!"
   } || echo -e "Sem nada a expurgar"
 
-  return 0
+    __goto_generate_return_code OK
+    return $?
 }
 
 ##########################################################################################################
@@ -300,21 +354,24 @@ function __goto_add_destiny() {
     echo 'Informe o diretório de destino' >&2
     __goto_manual_use
     __goto_manual_add_destiny
-    return 4
+    __goto_generate_return_code ERR_DIRECTORY_MISSING_ON_COMMAND
+    return $?
   }
 
   [[ -d $dest ]] || {
     echo "Diretório [$dest] não encontrado" >&2
     __goto_manual_use
     __goto_manual_add_destiny
-    return 8
+    __goto_generate_return_code ERR_DIRECTORY_NOT_FOUND
+    return $?
   }
 
   [[ -z $destAlias ]] && {
     echo 'Informe o apelido do destino' >&2
     __goto_manual_use
     __goto_manual_add_destiny
-    return 16
+    __goto_generate_return_code ERR_ALIAS_MISSING_ON_COMMAND
+    return $?
   }
 
   grep -q "^$destAlias=" $destMap && {
@@ -322,14 +379,16 @@ function __goto_add_destiny() {
     echo "Use -u --update para atualizar o destino" >&2
     __goto_manual_use
     __goto_manual_add_destiny
-    return 32
+    __goto_generate_return_code ERR_ALIAS_ALREADY_EXISTS
+    return $?
   }
 
   echo "$destAlias=$(realpath $dest)" >> $destMap
   __goto_sort_destiny_file
 
   echo "Destino [$destAlias] adicionado"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
@@ -346,19 +405,22 @@ function __goto_remove_destiny() {
     echo 'Informe o apelido do destino' >&2
     __goto_manual_use
     __goto_manual_delete_destiny
-    return 64
+    __goto_generate_return_code ERR_ALIAS_MISSING_ON_COMMAND
+    return $?
   }
 
   grep -q "^$destAlias=" $destMap || {
     echo "Destino [$destAlias] não encontrado" >&2
     __goto_manual_use
     __goto_manual_delete_destiny
-    return 128
+    __goto_generate_return_code ERR_ALIAS_NOT_FOUND
+    return $?
   }
 
   sed -i "/^$destAlias=/d" $destMap
   echo "Destino [$destAlias] removido"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
@@ -377,35 +439,40 @@ function __goto_update_destiny() {
     echo 'Informe o diretório de destino' >&2
     __goto_manual_use
     __goto_manual_update_destiny
-    return 256
+    __goto_generate_return_code ERR_DIRECTORY_MISSING_ON_COMMAND
+    return $?
   }
 
   [[ -d $dir ]] || {
     echo "Diretório [$dir] não encontrado" >&2
     __goto_manual_use
     __goto_manual_update_destiny
-    return 512
+    __goto_generate_return_code ERR_DIRECTORY_NOT_FOUND
+    return $?
   }
   
   [[ -z $destAlias ]] && {
     echo 'Informe o apelido do destino' >&2
     __goto_manual_use
     __goto_manual_update_destiny
-    return 1024
+    __goto_generate_return_code ERR_ALIAS_MISSING_ON_COMMAND
+    return $?
   }
 
   grep -q "^$destAlias=" $destMap || {
     echo "Destino [$destAlias] não encontrado" >&2
     __goto_manual_use
     __goto_manual_update_destiny
-    return 2048
+    __goto_generate_return_code ERR_ALIAS_NOT_FOUND
+    return $?
   }
   
   __goto_remove_destiny $destAlias 2>&1 > /dev/null
   __goto_add_destiny $dir $destAlias 2>&1 > /dev/null
 
   echo "Destino [$destAlias] atualizado"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
@@ -424,34 +491,38 @@ function __goto_rename_destiny() {
     echo "Necessário informar qual alias será renomeado"
     __goto_manual_use
     __goto_manual_rename_destiny
-    return 4096
+    __goto_generate_return_code ERR_ALIAS_MISSING_ON_COMMAND
+    return $?
   }
 
   [[ -z "$newAlias" ]] && {
     echo "Necessário informar o novo alias"
     __goto_manual_use
     __goto_manual_rename_destiny
-    return 8192
+    __goto_generate_return_code ERR_ALIAS_MISSING_ON_COMMAND
+    return $?
   }
 
   grep -q "^$oldAlias=" $destMap || {
     echo "Destino [$oldAlias] não encontrado" >&2
     __goto_manual_use
     __goto_manual_rename_destiny
-    return 2048
+    __goto_generate_return_code ERR_ALIAS_NOT_FOUND
+    return $?
   }
 
   local destAlias=$(__goto_get_destiny "$oldAlias")
-  echo "destino encontrado: $destAlias"
   [[ -z $destAlias ]] && {
     echo "Não foi possível renomear [$destAlias]. Destino não existe"
-    return 16384
+    __goto_generate_return_code ERR_ALIAS_ALREADY_EXISTS
+    return $?
   }
 
   __goto_remove_destiny $oldAlias 2>&1 > /dev/null
   __goto_add_destiny $destAlias $newAlias 2>&1 > /dev/null
   echo "Destino [$oldAlias] renomeado para [$newAlias]"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
@@ -473,10 +544,12 @@ function __goto_question_folder() {
 
   grep -q "^.*=$amIInMapping$" $destMap && {
     echo "$amIInMapping está mapeado"
-    return 0
+    __goto_generate_return_code OK
+    return $?
   } || {
     echo "$amIInMapping não está mapeado"
-    return 1
+    __goto_generate_return_code ERR_DIRECTORY_NOT_MAPPED
+    return $?
   }
 }
 
@@ -491,7 +564,8 @@ function __goto_sort_destiny_file() {
 
   sort $destMap > $tmpFile
   mv $tmpFile $destMap
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
@@ -556,7 +630,8 @@ function __goto_completion()
     fi
   fi
 
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 complete -o nosort -F __goto_completion goto
@@ -572,12 +647,14 @@ function __goto_manual_header() {
   echo -e "um diretório no formato 'apelido=diretório'"
   echo -e "O script também permite a edição do arquivo de mapeamento, adição,"
   echo -e "remoção e atualização de destinos"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_use() {
   echo -e "\nUso:"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_browse_directory() {
@@ -585,38 +662,44 @@ function __goto_manual_browse_directory() {
   echo -e "\tgoto <apelido> [subdiretório]"
   echo -e "\t\t<apelido> - apelido do diretório mapeado (use <TAB> para completar)"
   echo -e "\t\t[subdiretório] - subdiretório do diretório mapeado (use <TAB> para completar)"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_show_directories() {
   echo -e "\nMostra os diretórios mapeados:"
   echo -e "\tgoto -s|--show-destinies"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_get_destiny() {
   echo -e "\nObtém o diretório mapeado correspondente a um apelido:"
   echo -e "\tgoto -g|--get <apelido>"
   echo -e "\t\t<apelido> - apelido do diretório mapeado (use <TAB> para completar)"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_check_destinies() {
   echo -e "\nCheca se todos os diretórios mapeados ainda existem:"
   echo -e "\tgoto -c|--check-destinies"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_purge_destinies() {
   echo -e "\nRemove todos os mapeamentos que no qual o diretório destino não existe"
   echo -e "\tgoto -p|--purge-destinies"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_edit_destinies() {
   echo -e "\nAbre o arquivo de mapeamento para edição (com o VI):"
   echo -e "\tgoto -e|--edit"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_add_destiny() {
@@ -625,7 +708,8 @@ function __goto_manual_add_destiny() {
   echo -e "\t\t<diretório> - diretório a ser mapeado (use <TAB> para completar)"
   echo -e "\t\t<apelido> - apelido do diretório mapeado"
   echo -e "\t* Se o apelido já existir, é exibida uma mensagem de erro"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_delete_destiny() {
@@ -633,7 +717,8 @@ function __goto_manual_delete_destiny() {
   echo -e "\tgoto -d|--delete <apelido>"
   echo -e "\t\t<apelido> - apelido do diretório mapeado"
   echo -e "\t* Se o apelido não existir, é exibida uma mensagem de erro"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_update_destiny() {
@@ -642,7 +727,8 @@ function __goto_manual_update_destiny() {
   echo -e "\t\t<apelido> - apelido do diretório mapeado"
   echo -e "\t\t<diretório> - diretório a ser mapeado (use <TAB> para completar)"
   echo -e "\t* Se o apelido não existir, é exibida uma mensagem de erro"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_rename_destiny() {
@@ -651,6 +737,8 @@ function __goto_manual_rename_destiny() {
   echo -e "\t\t<antigo> - antigo apelido cadastrado"
   echo -e "\t\t<novo> - novo apelido que substituirá o <antigo>"
   echo -e "\t* Se o apelido antigo não existir, é exibida uma mensagem de erro"
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_question_folder() {
@@ -658,7 +746,8 @@ function __goto_manual_question_folder() {
   echo -e "\tgoto -q|--question [diretório]"
   echo -e "\t\t[diretorio] - (opcional) diretório que se deseja verificar."
   echo -e "\t* Se nenhum diretório for informado, será utilizado o diretório atual"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_show_map_file() {
@@ -667,12 +756,15 @@ function __goto_manual_show_map_file() {
   echo -e "\t* O arquivo é definido pela variável de ambiente: GOTO_DESTINY_FILE"
   echo -e "\t  e caso esta não exista, utiliza o arquivo padrão: \$HOME/.goto-destinies"
   echo -e "\t* Cria o arquivo se não existir"
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual_show_manual() {
   echo -e "\nExibe o manual:"
   echo -e "\tgoto -h|--help"
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
 
 function __goto_manual() {
@@ -691,5 +783,6 @@ function __goto_manual() {
   __goto_manual_question_folder
   __goto_manual_show_map_file
   __goto_manual_show_manual
-  return 0
+  __goto_generate_return_code OK
+  return $?
 }
