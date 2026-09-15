@@ -108,9 +108,17 @@ function goto() {
     return $?
   }
 
-  cd "$destino"
-    __goto_generate_return_code OK
+  cd "$destino" 2>/dev/null || {
+    local cdErrorCode=$?
+    echo -e "Erro ao acessar o diretório $destino"
+    echo -e "Verifique as permissões e tente novamente"
+    echo -e "Código de erro do comando 'cd': $cdErrorCode"
+    __goto_generate_return_code ERR_DIRECTORY_ACCESS_DENIED
     return $?
+  }
+
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
