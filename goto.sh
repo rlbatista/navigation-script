@@ -1,4 +1,4 @@
- #!/bin/bash
+#!/bin/bash
 
 ##########################################################################################################
 ## Função...: goto
@@ -18,7 +18,8 @@ function goto() {
     return $?
   }
 
-  local mapfile="$(__goto_get_destiny_file)"
+  local mapfile
+  mapfile="$(__goto_get_destiny_file)"
 
   [[ $1 == '-e' || $1 == '--edit' ]] && {
     vi $mapfile
@@ -157,7 +158,8 @@ function __goto_generate_return_code() {
 ##             menu
 ##########################################################################################################
 function __goto_choose_destiny() {
-  local mapFile="$(__goto_get_destiny_file)"
+  local mapFile
+  mapFile="$(__goto_get_destiny_file)"
 
   # Exibe as opções de mapeamentos
   mapfile -t opcoes < "$mapFile"
@@ -200,7 +202,8 @@ function __goto_choose_destiny() {
 ## Descrição.: Função interna responsável por exibir os itens cadatrados no arquivo de destino
 ##########################################################################################################
 function __goto_show_destinies() {
-  local mapFile="$(__goto_get_destiny_file)"
+  local mapFile
+  mapFile="$(__goto_get_destiny_file)"
   awk -F'=' '
     BEGIN {
       _keywidth = 0
@@ -237,7 +240,8 @@ function __goto_show_destinies() {
 ## Descrição.: Função interna responsável por obter o destino correspondente a uma chave
 ##########################################################################################################
 function __goto_get_destiny() {
-  local mapFile="$(__goto_get_destiny_file)"
+  local mapFile
+  mapFile="$(__goto_get_destiny_file)"
   local destAlias=$1
   [[ -z $destAlias ]] && {
     echo 'Informe o apelido do destino' >&2
@@ -246,7 +250,8 @@ function __goto_get_destiny() {
     __goto_generate_return_code ERR_ALIAS_MISSING_ON_COMMAND
     return $?
   }
-  local destino=$(awk -v dest="$destAlias" -F'=' '$1 == dest {print $2}' $mapFile)
+  local destino
+  destino=$(awk -v dest="$destAlias" -F'=' '$1 == dest {print $2}' $mapFile)
   [[ -n $destino ]] && echo $destino || {
     echo "" >&2 # Se o destino não for encontrado, é exibida uma mensagem em branco e retornado um código de erro
     __goto_generate_return_code ERR_ALIAS_NOT_FOUND
@@ -282,7 +287,8 @@ function __goto_get_destiny_file() {
 ##########################################################################################################
 function __goto_check_destinies() {
   local returnValue=OK
-  local mapFile="$(__goto_get_destiny_file)"
+  local mapFile
+  mapFile="$(__goto_get_destiny_file)"
   local status="ok"
   while IFS="=" read -r chave destino || [[ -n $chave || -n $destino ]]; do
     [[ -d $destino ]] || {
@@ -306,7 +312,8 @@ function __goto_check_destinies() {
 ## Descrição.: Remove todos os mapeamentos inválidos
 ##########################################################################################################
 function __goto_purge_destinies() {
-  local mapFile="$(__goto_get_destiny_file)"
+  local mapFile
+  mapFile="$(__goto_get_destiny_file)"
   local fileWasPurged="no"
   local createBkp="yes"
   while IFS="=" read -r chave destino || [[ -n $chave || -n $destino ]]; do
@@ -338,7 +345,8 @@ function __goto_purge_destinies() {
 ##            cópia. Se o arquivo destino já existir, é exibida uma mensagem de erro o backup é cancelado.
 ##########################################################################################################
 function __goto_create_bkp() {
-  local bkpSourceFile="$(__goto_get_destiny_file)"
+  local bkpSourceFile
+  bkpSourceFile="$(__goto_get_destiny_file)"
   local bkpDestinyFile="${1:-$(__goto_get_destiny_file)~}"
   local overwrite="no"
   [[ ${2,,} == '-f' || ${2,,} == '--force' || "$bkpSourceFile~" == "$bkpDestinyFile" ]] && {
@@ -393,7 +401,8 @@ function __goto_create_bkp() {
 ## Descrição.: Adiciona uma entrada no arquivo de mapeamento.
 ##########################################################################################################
 function __goto_add_destiny() {
-  local destMap="$(__goto_get_destiny_file)"
+  local destMap
+  destMap="$(__goto_get_destiny_file)"
   local dest=$1
   local destAlias=$2
 
@@ -445,7 +454,8 @@ function __goto_add_destiny() {
 ## Descrição.: Remove uma entrada do arquivo de mapeamento.
 ##########################################################################################################
 function __goto_remove_destiny() {
-  local destMap="$(__goto_get_destiny_file)"
+  local destMap
+  destMap="$(__goto_get_destiny_file)"
   local destAlias=$1
 
   [[ -z $destAlias ]] && {
@@ -478,7 +488,8 @@ function __goto_remove_destiny() {
 ## Descrição.: Atualiza um mapeamento.
 ##########################################################################################################
 function __goto_update_destiny() {
-  local destMap="$(__goto_get_destiny_file)"
+  local destMap
+  destMap="$(__goto_get_destiny_file)"
   local destAlias=$1
   local dir=$2
 
@@ -530,7 +541,8 @@ function __goto_update_destiny() {
 ## Descrição.: Renomeia a chave (apelido) de mapeamento.
 ##########################################################################################################
 function __goto_rename_destiny() {
-  local destMap="$(__goto_get_destiny_file)"
+  local destMap
+  destMap="$(__goto_get_destiny_file)"
   local oldAlias="$1"
   local newAlias="$2"
 
@@ -558,7 +570,8 @@ function __goto_rename_destiny() {
     return $?
   }
 
-  local destAlias=$(__goto_get_destiny "$oldAlias")
+  local destAlias
+  destAlias=$(__goto_get_destiny "$oldAlias")
   [[ -z $destAlias ]] && {
     echo "Não foi possível renomear [$destAlias]. Destino não existe"
     __goto_generate_return_code ERR_ALIAS_ALREADY_EXISTS
@@ -580,7 +593,8 @@ function __goto_rename_destiny() {
 ##########################################################################################################
 
 function __goto_question_folder() {
-  local destMap="$(__goto_get_destiny_file)"
+  local destMap
+  destMap="$(__goto_get_destiny_file)"
   local amIInMapping="$1"
 
   [[ -z $amIInMapping ]] && {
@@ -606,8 +620,10 @@ function __goto_question_folder() {
 ## Descrição.: Ordena o conteúdo do arquivo de mepamento.
 ##########################################################################################################
 function __goto_sort_destiny_file() {
-  local destMap="$(__goto_get_destiny_file)"
-  local tmpFile=$(mktemp)
+  local destMap
+  destMap="$(__goto_get_destiny_file)"
+  local tmpFile
+  tmpFile=$(mktemp)
 
   sort $destMap > $tmpFile
   mv $tmpFile $destMap
@@ -621,10 +637,12 @@ function __goto_sort_destiny_file() {
 ##########################################################################################################
 function __goto_completion()
 {
-  local destFile="$(__goto_get_destiny_file)"
+  local destFile
+  destFile="$(__goto_get_destiny_file)"
   local cur=${COMP_WORDS[COMP_CWORD]}
   local prev=${COMP_WORDS[COMP_CWORD-1]}
-  local registeredDestinies="$(awk -F'=' '{print $1}' $destFile)"
+  local registeredDestinies
+  registeredDestinies="$(awk -F'=' '{print $1}' $destFile)"
   local registeredDestiniesAsArray=($registeredDestinies)
   local options="-h --help --e --edit -s --show-destinies -g --get -c --check-destinies -p --purge-destinies -a --add -d --delete -u --update -r --rename -q --question -m --map-file"
 
@@ -668,7 +686,8 @@ function __goto_completion()
       done
 
       if [[ -d $folder ]]; then
-        local destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
+        local destinies
+        destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
         [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  $cur) ) || COMPREPLY=( )
       fi
 
