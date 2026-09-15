@@ -22,7 +22,7 @@ function goto() {
   mapfile="$(__goto_get_destiny_file)"
 
   [[ $1 == '-e' || $1 == '--edit' ]] && {
-    vi $mapfile
+    vi "$mapfile"
     __goto_generate_return_code OK
     return $?
   }
@@ -34,7 +34,7 @@ function goto() {
   }
 
   [[ $1 == '-g' || $1 == '--get' ]] && {
-    __goto_get_destiny $2
+    __goto_get_destiny "$2"
     return $?
   }
 
@@ -50,30 +50,30 @@ function goto() {
 
   [[ $1 == '-a' || $1 == '--add' ]] && {
     __goto_create_bkp
-    __goto_add_destiny $2 $3
+    __goto_add_destiny "$2" "$3"
     return $?
   }
 
   [[ $1 == '-d' || $1 == '--delete' ]] && {
     __goto_create_bkp
-    __goto_remove_destiny $2
+    __goto_remove_destiny "$2"
     return $?
   }
 
   [[ $1 == '-u' || $1 == '--update' ]] && {
     __goto_create_bkp
-    __goto_update_destiny $2 $3
+    __goto_update_destiny "$2" "$3"
     return $?
   }
 
   [[ $1 == '-r' || $1 == '--rename' ]] && {
     __goto_create_bkp
-    __goto_rename_destiny $2 $3
+    __goto_rename_destiny "$2" "$3"
     return $?
   }
 
   [[ $1 == '-q' || $1 == '--question' ]] && {
-    __goto_question_folder $2
+    __goto_question_folder "$2"
     return $?
   }
 
@@ -83,7 +83,7 @@ function goto() {
     return $?
   }
 
-  destino=$(__goto_get_destiny $1 2> /dev/null)
+  destino=$(__goto_get_destiny "$1" 2> /dev/null)
 
   [[ -z $destino ]] && {
     [[ ! -d $1 ]] && {
@@ -109,7 +109,7 @@ function goto() {
     return $?
   }
 
-  cd $destino
+  cd "$destino"
     __goto_generate_return_code OK
     return $?
 }
@@ -229,7 +229,7 @@ function __goto_show_destinies() {
         bg = i % 2 == 0 ? BG_DEFAULT : BG_GRAY
         printf " %s%" _keywidth "s     %-"_valuewidth"s%s \n", bg, _keys[i],_values[i], RESET
       }
-    }' $mapFile
+    }' "$mapFile"
     __goto_generate_return_code OK
     return $?
 }
@@ -251,8 +251,8 @@ function __goto_get_destiny() {
     return $?
   }
   local destino
-  destino=$(awk -v dest="$destAlias" -F'=' '$1 == dest {print $2}' $mapFile)
-  [[ -n $destino ]] && echo $destino || {
+  destino=$(awk -v dest="$destAlias" -F'=' '$1 == dest {print $2}' "$mapFile")
+  [[ -n "$destino" ]] && echo "$destino" || {
     echo "" >&2 # Se o destino não for encontrado, é exibida uma mensagem em branco e retornado um código de erro
     __goto_generate_return_code ERR_ALIAS_NOT_FOUND
     return $?
@@ -270,8 +270,8 @@ function __goto_get_destiny() {
 ##########################################################################################################
 function __goto_get_destiny_file() {
   local mapFile="${GOTO_DESTINY_FILE:-$HOME/.goto-destinies}"
-  [[ -f $mapFile ]] || {
-    touch $mapFile
+  [[ -f "$mapFile" ]] || {
+    touch "$mapFile"
   }
   echo "$mapFile"
   __goto_generate_return_code OK
@@ -316,14 +316,14 @@ function __goto_purge_destinies() {
   mapFile="$(__goto_get_destiny_file)"
   local fileWasPurged="no"
   local createBkp="yes"
-  while IFS="=" read -r chave destino || [[ -n $chave || -n $destino ]]; do
+  while IFS="=" read -r chave destino || [[ -n $chave || -n "$destino" ]]; do
     [[ -d $destino ]] || {
       fileWasPurged="yes"
       [[ $createBkp == "yes" ]] && {
         __goto_create_bkp
         createBkp="no-more"
       }
-      __goto_remove_destiny $chave
+      __goto_remove_destiny "$chave"
     }
   done < "$mapFile"
 
@@ -375,7 +375,7 @@ function __goto_create_bkp() {
 
   [[ ! -e "$bkpDestinyFile" ]] && {
     local bkpDestinyDir
-    bkpDestinyDir="$(dirname $bkpDestinyFile)"
+    bkpDestinyDir="$(dirname "$bkpDestinyFile")"
     [[ ! -w "$bkpDestinyDir" || ! -x "$bkpDestinyDir" ]] && {
       echo -e "Não foi possível criar o backup. Acesso negado em $bkpDestinyFile"
       __goto_generate_return_code ERR_FILE_ACCESS_DENIED
@@ -430,7 +430,7 @@ function __goto_add_destiny() {
     return $?
   }
 
-  grep -q "^$destAlias=" $destMap && {
+  grep -q "^$destAlias=" "$destMap" && {
     echo "Destino [$destAlias] já existe" >&2
     echo "Use -u --update para atualizar o destino" >&2
     __goto_manual_use
@@ -439,7 +439,7 @@ function __goto_add_destiny() {
     return $?
   }
 
-  echo "$destAlias=$(realpath $dest)" >> $destMap
+  echo "$destAlias=$(realpath "$dest")" >> "$destMap"
   __goto_sort_destiny_file
 
   echo "Destino [$destAlias] adicionado"
@@ -466,7 +466,7 @@ function __goto_remove_destiny() {
     return $?
   }
 
-  grep -q "^$destAlias=" $destMap || {
+  grep -q "^$destAlias=" "$destMap" || {
     echo "Destino [$destAlias] não encontrado" >&2
     __goto_manual_use
     __goto_manual_delete_destiny
@@ -474,7 +474,7 @@ function __goto_remove_destiny() {
     return $?
   }
 
-  sed -i "/^$destAlias=/d" $destMap
+  sed -i "/^$destAlias=/d" "$destMap"
   echo "Destino [$destAlias] removido"
   __goto_generate_return_code OK
   return $?
@@ -517,7 +517,7 @@ function __goto_update_destiny() {
     return $?
   }
 
-  grep -q "^$destAlias=" $destMap || {
+  grep -q "^$destAlias=" "$destMap" || {
     echo "Destino [$destAlias] não encontrado" >&2
     __goto_manual_use
     __goto_manual_update_destiny
@@ -525,8 +525,8 @@ function __goto_update_destiny() {
     return $?
   }
   
-  __goto_remove_destiny $destAlias 2>&1 > /dev/null
-  __goto_add_destiny $dir $destAlias 2>&1 > /dev/null
+  __goto_remove_destiny "$destAlias" 2>&1 > /dev/null
+  __goto_add_destiny "$dir" "$destAlias" 2>&1 > /dev/null
 
   echo "Destino [$destAlias] atualizado"
   __goto_generate_return_code OK
@@ -562,7 +562,7 @@ function __goto_rename_destiny() {
     return $?
   }
 
-  grep -q "^$oldAlias=" $destMap || {
+  grep -q "^$oldAlias=" "$destMap" || {
     echo "Destino [$oldAlias] não encontrado" >&2
     __goto_manual_use
     __goto_manual_rename_destiny
@@ -578,8 +578,8 @@ function __goto_rename_destiny() {
     return $?
   }
 
-  __goto_remove_destiny $oldAlias 2>&1 > /dev/null
-  __goto_add_destiny $destAlias $newAlias 2>&1 > /dev/null
+  __goto_remove_destiny "$oldAlias" 2>&1 > /dev/null
+  __goto_add_destiny "$destAlias" "$newAlias" 2>&1 > /dev/null
   echo "Destino [$oldAlias] renomeado para [$newAlias]"
   __goto_generate_return_code OK
   return $?
@@ -600,10 +600,10 @@ function __goto_question_folder() {
   [[ -z $amIInMapping ]] && {
     amIInMapping="$(pwd)"
   } || {
-    amIInMapping="$(realpath $amIInMapping)"
+    amIInMapping="$(realpath "$amIInMapping")"
   }
 
-  grep -q "^.*=$amIInMapping$" $destMap && {
+  grep -q "^.*=$amIInMapping$" "$destMap" && {
     echo "$amIInMapping está mapeado"
     __goto_generate_return_code OK
     return $?
@@ -625,8 +625,8 @@ function __goto_sort_destiny_file() {
   local tmpFile
   tmpFile=$(mktemp)
 
-  sort $destMap > $tmpFile
-  mv $tmpFile $destMap
+  sort "$destMap" > "$tmpFile"
+  mv "$tmpFile" "$destMap"
   __goto_generate_return_code OK
   return $?
 }
@@ -642,40 +642,40 @@ function __goto_completion()
   local cur=${COMP_WORDS[COMP_CWORD]}
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local registeredDestinies
-  registeredDestinies="$(awk -F'=' '{print $1}' $destFile)"
+  registeredDestinies="$(awk -F'=' '{print $1}' "$destFile")"
   local registeredDestiniesAsArray=($registeredDestinies)
   local options="-h --help --e --edit -s --show-destinies -g --get -c --check-destinies -p --purge-destinies -a --add -d --delete -u --update -r --rename -q --question -m --map-file"
 
-  if [[ $prev == 'goto' && ! $cur =~ ^- ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
-    COMPREPLY+=( $(compgen -d -- $cur) )
+  if [[ $prev == 'goto' && ! "$cur" =~ ^- ]] ; then
+    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
+    COMPREPLY+=( $(compgen -d -- "$cur") )
 
-  elif [[ $prev == 'goto' && $cur =~ ^- ]] ; then
-    COMPREPLY=( $(compgen -W "$options" -- $cur) )
+  elif [[ $prev == 'goto' && "$cur" =~ ^- ]] ; then
+    COMPREPLY=( $(compgen -W "$options" -- "$cur") )
 
   elif [[ $prev == '-d' || $prev == '--delete' ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
+    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
 
   elif [[ $prev == '-a' || $prev == '--add' ]] ; then
-    COMPREPLY=( $(compgen -d -- $cur) )
+    COMPREPLY=( $(compgen -d -- "$cur") )
 
   elif [[ $prev == '-q' || $prev == '--question' ]] ; then
-    COMPREPLY=( $(compgen -d -- $cur) )
+    COMPREPLY=( $(compgen -d -- "$cur") )
 
   elif [[ $prev == '-u' || $prev == '--update' ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
+    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
 
   elif [[ $prev == '-r' || $prev == '--rename' ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
+    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
 
   elif [[ $prev == '-g' ]] || [[ $prev == '--get' ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- $cur) )
+    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
 
   else
     local mapedItem=${COMP_WORDS[1]}
     local folder
     if [[ " ${registeredDestiniesAsArray[@]} " == *" ${mapedItem} "* ]]; then
-      folder=$(awk -F'=' -v alias="$mapedItem" '$1 == alias {print $2}' $destFile)
+      folder=$(awk -F'=' -v alias="$mapedItem" '$1 == alias {print $2}' "$destFile")
     else
       folder="$mapedItem"
     fi
@@ -687,8 +687,8 @@ function __goto_completion()
 
       if [[ -d $folder ]]; then
         local destinies
-        destinies=$(eza -D $folder | xargs -n1 basename 2>/dev/null)
-        [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  $cur) ) || COMPREPLY=( )
+        destinies=$(eza -D "$folder" | xargs -n1 basename 2>/dev/null)
+        [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  "$cur") ) || COMPREPLY=( )
       fi
 
     else
