@@ -259,13 +259,15 @@ function __goto_get_destiny() {
   }
   local destino
   destino=$(awk -v dest="$destAlias" -F'=' '$1 == dest {print $2}' "$mapFile")
-  [[ -n "$destino" ]] && echo "$destino" || {
+  [[ -z "$destino" ]] && {
     echo "" >&2 # Se o destino não for encontrado, é exibida uma mensagem em branco e retornado um código de erro
     __goto_generate_return_code ERR_ALIAS_NOT_FOUND
     return $?
   }
-    __goto_generate_return_code OK
-    return $?
+  
+  echo "$destino"
+  __goto_generate_return_code OK
+  return $?
 }
 
 ##########################################################################################################
@@ -604,21 +606,21 @@ function __goto_question_folder() {
   destMap="$(__goto_get_destiny_file)"
   local amIInMapping="$1"
 
-  [[ -z $amIInMapping ]] && {
+  if [[ -z $amIInMapping ]]; then
     amIInMapping="$(pwd)"
-  } || {
+  else
     amIInMapping="$(realpath "$amIInMapping")"
-  }
+  fi
 
-  grep -q "^.*=$amIInMapping$" "$destMap" && {
+  if grep -q "^.*=$amIInMapping$" "$destMap"; then
     echo "$amIInMapping está mapeado"
     __goto_generate_return_code OK
     return $?
-  } || {
+  else
     echo "$amIInMapping não está mapeado"
     __goto_generate_return_code ERR_DIRECTORY_NOT_MAPPED
     return $?
-  }
+  fi
 }
 
 ##########################################################################################################
