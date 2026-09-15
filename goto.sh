@@ -78,8 +78,7 @@ function goto() {
   }
 
   [[ $1 == '-m' || $1 == '--map-file' ]] && {
-    echo $(__goto_get_destiny_file)
-    __goto_generate_return_code OK
+    __goto_get_destiny_file
     return $?
   }
 
