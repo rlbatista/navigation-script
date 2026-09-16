@@ -644,64 +644,49 @@ function __goto_sort_destiny_file() {
 ## Função...: __goto_completion
 ## Descrição: Provê a funciolidade "completar" para o script ao pressionar a tecla <TAB>.
 ##########################################################################################################
-function __goto_completion()
-{
+function __goto_completion() {
   local destFile
   destFile="$(__goto_get_destiny_file)"
   local cur=${COMP_WORDS[COMP_CWORD]}
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local registeredDestinies
   registeredDestinies="$(awk -F'=' '{print $1}' "$destFile")"
-  mapfile -t registeredDestiniesAsArray <<< "$registeredDestinies"
   local options="-h --help --e --edit -s --show-destinies -g --get -c --check-destinies -p --purge-destinies -a --add -d --delete -u --update -r --rename -q --question -m --map-file"
+  COMPREPLY=( )
 
-  if [[ $prev == 'goto' && ! "$cur" =~ ^- ]] ; then
-    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
-    mapfile -t -O "${#COMPREPLY[@]}" COMPREPLY < <(compgen -d -- "$cur")
-
-  elif [[ $prev == 'goto' && "$cur" =~ ^- ]] ; then
-    mapfile -t COMPREPLY < <(compgen -W "$options" -- "$cur")
-
-  elif [[ $prev == '-d' || $prev == '--delete' ]] ; then
-    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
-
-  elif [[ $prev == '-a' || $prev == '--add' ]] ; then
-    mapfile -t COMPREPLY < <(compgen -d -- "$cur")
-
-  elif [[ $prev == '-q' || $prev == '--question' ]] ; then
-    mapfile -t COMPREPLY < <(compgen -d -- "$cur")
-
-  elif [[ $prev == '-u' || $prev == '--update' ]] ; then
-    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
-
-  elif [[ $prev == '-r' || $prev == '--rename' ]] ; then
-    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
-
-  elif [[ $prev == '-g' ]] || [[ $prev == '--get' ]] ; then
-    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
-
-  else
-    local mapedItem=${COMP_WORDS[1]}
-    local folder
-    folder=$(awk -F'=' -v alias="$mapedItem" '$1 == alias {print $2}' "$destFile")
-    [[ -z "$folder" ]] && folder="$mapedItem"
-    
-    if [[ -d $folder ]]; then
-      for ((i=2; i < COMP_CWORD; i++)); do
-        folder="$folder/${COMP_WORDS[i]}"
-      done
-
-      if [[ -d $folder ]]; then
-        local destinies
-        destinies=$(eza -D "$folder" | xargs -n1 basename 2>/dev/null)
-        COMPREPLY=( )
-        [[ -n $destinies ]] && mapfile -t COMPREPLY < <(compgen -W "$destinies" --  "$cur")
+  case "$prev" in
+    goto)
+      if [[ ! "$cur" =~ ^- ]]; then
+        mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
+        mapfile -t -O "${#COMPREPLY[@]}" COMPREPLY < <(compgen -d -- "$cur")
+      else
+        mapfile -t COMPREPLY < <(compgen -W "$options" -- "$cur")
       fi
+      ;;
+    -d|--delete|-u|--update|-r|--rename|-g|--get)
+      mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
+      ;;
+    -a|--add|-q|--question)
+      mapfile -t COMPREPLY < <(compgen -d -- "$cur")
+      ;;
+    *)
+      local mappedItem=${COMP_WORDS[1]}
+      local folder
+      folder=$(awk -F'=' -v alias="$mappedItem" '$1 == alias {print $2}' "$destFile")
+      [[ -z "$folder" ]] && folder="$mappedItem"
+      if [[ -d $folder ]]; then
+        for ((i=2; i < COMP_CWORD; i++)); do
+          folder="$folder/${COMP_WORDS[i]}"
+        done
 
-    else
-      COMPREPLY=( )
-    fi
-  fi
+        if [[ -d $folder ]]; then
+          local destinies
+          destinies=$(eza -D "$folder" | xargs -n1 basename 2>/dev/null)
+          [[ -n $destinies ]] && mapfile -t COMPREPLY < <(compgen -W "$destinies" -- "$cur")
+        fi
+      fi
+      ;;
+  esac
 
   __goto_generate_return_code OK
   return $?
