@@ -126,3 +126,33 @@ chamadas diretamente pelo usuário):
 O comentário de cabeçalho do script cita `batcat` como dependência, mas ele
 não é utilizado em nenhum ponto do código atual — apenas `eza` e `vi` são
 efetivamente usados.
+
+## Testes
+
+A suíte de testes usa [bats-core](https://github.com/bats-core/bats-core)
+(mais os plugins `bats-support`/`bats-assert`), instalados localmente via npm.
+
+```bash
+npm install   # instala bats-core e as bibliotecas de asserção
+npm test      # roda toda a suíte (test/*.bats)
+```
+
+Cada arquivo `.bats` cobre uma área do script:
+
+| Arquivo | Cobertura |
+|---|---|
+| `test/goto_mapping.bats` | CRUD de mapeamentos: `__goto_add_destiny`, `__goto_get_destiny`, `__goto_remove_destiny`, `__goto_update_destiny`, `__goto_rename_destiny`, `__goto_sort_destiny_file`, `__goto_get_destiny_file` |
+| `test/goto_validation.bats` | `__goto_check_destinies`, `__goto_purge_destinies`, `__goto_question_folder` |
+| `test/goto_backup.bats` | `__goto_create_bkp` (criação, proteção contra sobrescrita, `--force`) |
+| `test/goto_navigation.bats` | Dispatcher principal `goto` (navegação, todas as flags, menu interativo e `-e/--edit`) |
+| `test/goto_completion.bats` | Autocomplete (`__goto_completion`) |
+| `test/goto_return_codes.bats` | Mapeamento de `__goto_generate_return_code` |
+
+Cada teste roda com `GOTO_DESTINY_FILE` apontando para um arquivo temporário
+isolado (veja `test/test_helper.bash`), então nenhum teste toca no arquivo de
+mapeamentos real do usuário.
+
+Duas dependências externas do script (`vi` e `eza`) são substituídas por
+binários fake (stubs) durante os testes — ver `stub_bin` em
+`test/test_helper.bash` — para não exigir um editor de verdade nem o `eza`
+instalado só para rodar a suíte.

@@ -1,0 +1,26 @@
+{
+  "name": "goto",
+  "version": "1.0.0",
+  "description": "Script Bash que adiciona o comando `goto`, um navegador rápido de diretórios por apelido (alias). Em vez de digitar `cd /caminho/longo/do/projeto`, você mapeia esse caminho para um apelido curto (ex.: `proj`) e navega com `goto proj`.",
+  "main": "index.js",
+  "scripts": {
+    "test": "bats test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rlbatista/navigation-script.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/rlbatista/navigation-script/issues"
+  },
+  "homepage": "https://github.com/rlbatista/navigation-script#readme",
+  "devDependencies": {
+    "bats": "^1.13.0",
+    "bats-assert": "^2.2.4",
+    "bats-support": "^0.3.0"
+  }
+}
