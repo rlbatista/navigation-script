@@ -683,11 +683,8 @@ function __goto_completion()
   else
     local mapedItem=${COMP_WORDS[1]}
     local folder
-    if [[ " ${registeredDestiniesAsArray[@]} " == *" ${mapedItem} "* ]]; then
-      folder=$(awk -F'=' -v alias="$mapedItem" '$1 == alias {print $2}' "$destFile")
-    else
-      folder="$mapedItem"
-    fi
+    folder=$(awk -F'=' -v alias="$mapedItem" '$1 == alias {print $2}' "$destFile")
+    [[ -z "$folder" ]] && folder="$mapedItem"
     
     if [[ -d $folder ]]; then
       for ((i=2; i < COMP_CWORD; i++)); do
