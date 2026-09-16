@@ -656,29 +656,29 @@ function __goto_completion()
   local options="-h --help --e --edit -s --show-destinies -g --get -c --check-destinies -p --purge-destinies -a --add -d --delete -u --update -r --rename -q --question -m --map-file"
 
   if [[ $prev == 'goto' && ! "$cur" =~ ^- ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
-    COMPREPLY+=( $(compgen -d -- "$cur") )
+    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
+    mapfile -t -O "${#COMPREPLY[@]}" COMPREPLY < <(compgen -d -- "$cur")
 
   elif [[ $prev == 'goto' && "$cur" =~ ^- ]] ; then
-    COMPREPLY=( $(compgen -W "$options" -- "$cur") )
+    mapfile -t COMPREPLY < <(compgen -W "$options" -- "$cur")
 
   elif [[ $prev == '-d' || $prev == '--delete' ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
+    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
 
   elif [[ $prev == '-a' || $prev == '--add' ]] ; then
-    COMPREPLY=( $(compgen -d -- "$cur") )
+    mapfile -t COMPREPLY < <(compgen -d -- "$cur")
 
   elif [[ $prev == '-q' || $prev == '--question' ]] ; then
-    COMPREPLY=( $(compgen -d -- "$cur") )
+    mapfile -t COMPREPLY < <(compgen -d -- "$cur")
 
   elif [[ $prev == '-u' || $prev == '--update' ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
+    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
 
   elif [[ $prev == '-r' || $prev == '--rename' ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
+    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
 
   elif [[ $prev == '-g' ]] || [[ $prev == '--get' ]] ; then
-    COMPREPLY=( $(compgen -W "$registeredDestinies" -- "$cur") )
+    mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
 
   else
     local mapedItem=${COMP_WORDS[1]}
@@ -697,7 +697,8 @@ function __goto_completion()
       if [[ -d $folder ]]; then
         local destinies
         destinies=$(eza -D "$folder" | xargs -n1 basename 2>/dev/null)
-        [[ -n $destinies ]] && COMPREPLY=( $(compgen -W "$destinies" --  "$cur") ) || COMPREPLY=( )
+        COMPREPLY=( )
+        [[ -n $destinies ]] && mapfile -t COMPREPLY < <(compgen -W "$destinies" --  "$cur")
       fi
 
     else
