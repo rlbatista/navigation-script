@@ -534,8 +534,8 @@ function __goto_update_destiny() {
     return $?
   }
   
-  __goto_remove_destiny "$destAlias" 2>&1 > /dev/null
-  __goto_add_destiny "$dir" "$destAlias" 2>&1 > /dev/null
+  __goto_remove_destiny "$destAlias"  > /dev/null 2>&1
+  __goto_add_destiny "$dir" "$destAlias" > /dev/null 2>&1
 
   echo "Destino [$destAlias] atualizado"
   __goto_generate_return_code OK
@@ -587,8 +587,8 @@ function __goto_rename_destiny() {
     return $?
   }
 
-  __goto_remove_destiny "$oldAlias" 2>&1 > /dev/null
-  __goto_add_destiny "$destAlias" "$newAlias" 2>&1 > /dev/null
+  __goto_remove_destiny "$oldAlias" > /dev/null 2>&1
+  __goto_add_destiny "$destAlias" "$newAlias" > /dev/null 2>&1
   echo "Destino [$oldAlias] renomeado para [$newAlias]"
   __goto_generate_return_code OK
   return $?
