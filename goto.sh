@@ -652,7 +652,7 @@ function __goto_completion()
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local registeredDestinies
   registeredDestinies="$(awk -F'=' '{print $1}' "$destFile")"
-  local registeredDestiniesAsArray=($registeredDestinies)
+  mapfile -t registeredDestiniesAsArray <<< "$registeredDestinies"
   local options="-h --help --e --edit -s --show-destinies -g --get -c --check-destinies -p --purge-destinies -a --add -d --delete -u --update -r --rename -q --question -m --map-file"
 
   if [[ $prev == 'goto' && ! "$cur" =~ ^- ]] ; then
