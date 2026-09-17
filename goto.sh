@@ -657,8 +657,24 @@ function __goto_question_folder() {
     amIInMapping="$(realpath "$amIInMapping")"
   fi
 
-  if grep -q "^.*=$amIInMapping$" "$destMap"; then
-    echo "$amIInMapping está mapeado"
+  local mapping
+  mapping="$(grep "^.*=$amIInMapping$" "$destMap")"
+  if [[ -n "$mapping" ]]; then
+    # o mesmo diretório pode estar mapeado sob mais de um apelido (o -a/--add
+    # só valida apelido duplicado, não diretório duplicado); junta todas as
+    # chaves encontradas em vez de mostrar só a primeira linha do grep
+    local chaves=""
+    local linha
+    while IFS= read -r linha; do
+      local chave="${linha%%=*}"
+      chaves="${chaves:+$chaves, }$chave"
+    done <<< "$mapping"
+
+    if [[ $mapping == *$'\n'* ]]; then
+      echo "$amIInMapping está mapeado nas chaves $chaves"
+    else
+      echo "$amIInMapping está mapeado na chave $chaves"
+    fi
     return "$(__goto_exit_code OK)"
   else
     echo "$amIInMapping não está mapeado"

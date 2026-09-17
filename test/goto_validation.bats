@@ -66,12 +66,33 @@ setup() {
 
 # --- __goto_question_folder ---
 
-@test "__goto_question_folder identifica um diretório mapeado" {
+@test "__goto_question_folder identifica um diretório mapeado e mostra a chave" {
   __goto_add_destiny "$DIR_A" "alias1" > /dev/null
 
   run __goto_question_folder "$DIR_A"
   assert_success
-  assert_output --partial "está mapeado"
+  assert_output --partial "está mapeado na chave alias1"
+}
+
+@test "__goto_question_folder mostra a chave certa quando há outros mapeamentos no arquivo" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  __goto_add_destiny "$DIR_B" "alias2" > /dev/null
+
+  run __goto_question_folder "$DIR_A"
+  assert_success
+  assert_output --partial "está mapeado na chave alias1"
+  refute_output --partial "alias2"
+}
+
+@test "__goto_question_folder lista todas as chaves quando o mesmo diretório está mapeado sob mais de um apelido" {
+  # __goto_add_destiny só valida apelido duplicado, não diretório duplicado
+  # -- os dois apelidos abaixo apontam para o mesmo DIR_A de propósito
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  __goto_add_destiny "$DIR_A" "alias2" > /dev/null
+
+  run __goto_question_folder "$DIR_A"
+  assert_success
+  assert_output "$(realpath "$DIR_A") está mapeado nas chaves alias1, alias2"
 }
 
 @test "__goto_question_folder identifica um diretório não mapeado" {
@@ -86,5 +107,5 @@ setup() {
 
   run __goto_question_folder
   assert_success
-  assert_output --partial "está mapeado"
+  assert_output --partial "está mapeado na chave alias1"
 }

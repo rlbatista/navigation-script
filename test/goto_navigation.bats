@@ -129,7 +129,7 @@ setup() {
   cd "$DIR_A"
   run goto -q
   assert_success
-  assert_output --partial "está mapeado"
+  assert_output --partial "está mapeado na chave alias1"
 }
 
 # --- ponto impuro: chamada a um comando externo (vi) ---
