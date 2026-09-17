@@ -124,7 +124,9 @@ deixa as duas funções consistentes entre si.
 todas as flags, então dá pra validar a refatoração sem medo de regressão
 silenciosa. `case`/`[[` são Bash puro.
 
-## 5. `refactor`: helper `__goto_return`
+## 5. `refactor`: helper para colapsar `__goto_generate_return_code` + `return` — feito, com correção de rota
+
+Tentativa inicial (revertida): um helper que ele mesmo desse `return`,
 
 ```bash
 function __goto_return() {
@@ -133,12 +135,37 @@ function __goto_return() {
 }
 ```
 
-Colapsa o par `__goto_generate_return_code CODE; return $?`, que se
-repete umas 40 vezes no arquivo, para uma linha só em cada ponto de
-retorno.
+**não funciona** para os casos de retorno antecipado dentro de blocos de
+guarda (`[[ cond ]] && { ...; __goto_return X }`), que são a maioria das
+~65 ocorrências. O `return` dentro de `__goto_return` só encerra a própria
+`__goto_return`, nunca a função que a chamou — em Bash não existe
+"tail call" que propague um `return` para o chamador. Isso só funcionaria
+nos poucos pontos em que a chamada já é a última instrução da função
+(onde o valor de saída "cai" naturalmente). Rodei os testes antes de
+commitar, como combinado, e a suíte pegou o problema na hora: ~20 testes
+passaram a falhar porque as validações paravam de interromper a função.
 
-**Prioridade:** baixa. **Risco:** nenhum — mudança mecânica, sem lógica
-nova.
+Correção: em vez de um helper que retorna sozinho, um helper que **imprime**
+(echo) o código numérico, usado como `return $(__goto_exit_code X)` — aí é
+o `return` escrito literalmente na própria função chamadora que faz o
+trabalho, e `$(__goto_exit_code X)` é só o valor substituído antes dele.
+Funciona igual em blocos de guarda e no fim da função:
+
+```bash
+function __goto_exit_code() {
+  __goto_generate_return_code "$1"
+  echo $?
+}
+```
+
+`__goto_generate_return_code` foi mantida intacta (mesmo contrato,
+mesmos testes) — `__goto_exit_code` só reaproveita a tabela de códigos
+dela por dentro, sem duplicar nada.
+
+**Prioridade:** baixa. **Risco:** o mecanismo ingênuo tinha risco real
+(e a suíte de testes provou isso); a versão corrigida foi validada pelos
+62 testes existentes, que já cobrem as guardas de validação de cada
+função — não precisou de teste novo dedicado.
 
 ## 6. `refactor`: fonte única para a lista de flags
 
