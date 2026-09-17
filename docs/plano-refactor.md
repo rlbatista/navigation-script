@@ -105,7 +105,7 @@ linhas ímpares — as pares saem sempre sem cor de fundo, provavelmente não
 **Prioridade:** média. **Risco:** nenhum — `awk` puro (sem gawk/bsd-awk
 específico), comportamento idêntico nas duas plataformas.
 
-## 4. `refactor`: `case` no dispatcher de `goto()`
+## 4. `refactor`: `case` no dispatcher de `goto()` — feito
 
 Hoje `goto()` despacha as ~13 flags com blocos repetidos:
 

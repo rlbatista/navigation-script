@@ -31,66 +31,68 @@ function goto() {
   local mapfile
   mapfile="$(__goto_get_destiny_file)"
 
-  [[ $1 == '-e' || $1 == '--edit' ]] && {
-    vi "$mapfile"
-    __goto_generate_return_code OK
-    return $?
-  }
+  case "$1" in
+    -e | --edit)
+      vi "$mapfile"
+      __goto_generate_return_code OK
+      return $?
+      ;;
 
-  [[ $1 == '-s' || $1 == '--show-destinies' ]] && {
-    __goto_show_destinies
-    __goto_generate_return_code OK
-    return $?
-  }
+    -s | --show-destinies)
+      __goto_show_destinies
+      __goto_generate_return_code OK
+      return $?
+      ;;
 
-  [[ $1 == '-g' || $1 == '--get' ]] && {
-    __goto_get_destiny "$2"
-    return $?
-  }
+    -g | --get)
+      __goto_get_destiny "$2"
+      return $?
+      ;;
 
-  [[ $1 == '-c' || $1 == '--check-destinies' ]] && {
-    __goto_check_destinies
-    return $?
-  }
+    -c | --check-destinies)
+      __goto_check_destinies
+      return $?
+      ;;
 
-  [[ $1 == '-p' || $1 == '--purge-destinies' ]] && {
-    __goto_purge_destinies
-    return $?
-  }
+    -p | --purge-destinies)
+      __goto_purge_destinies
+      return $?
+      ;;
 
-  [[ $1 == '-a' || $1 == '--add' ]] && {
-    __goto_create_bkp
-    __goto_add_destiny "$2" "$3"
-    return $?
-  }
+    -a | --add)
+      __goto_create_bkp
+      __goto_add_destiny "$2" "$3"
+      return $?
+      ;;
 
-  [[ $1 == '-d' || $1 == '--delete' ]] && {
-    __goto_create_bkp
-    __goto_remove_destiny "$2"
-    return $?
-  }
+    -d | --delete)
+      __goto_create_bkp
+      __goto_remove_destiny "$2"
+      return $?
+      ;;
 
-  [[ $1 == '-u' || $1 == '--update' ]] && {
-    __goto_create_bkp
-    __goto_update_destiny "$2" "$3"
-    return $?
-  }
+    -u | --update)
+      __goto_create_bkp
+      __goto_update_destiny "$2" "$3"
+      return $?
+      ;;
 
-  [[ $1 == '-r' || $1 == '--rename' ]] && {
-    __goto_create_bkp
-    __goto_rename_destiny "$2" "$3"
-    return $?
-  }
+    -r | --rename)
+      __goto_create_bkp
+      __goto_rename_destiny "$2" "$3"
+      return $?
+      ;;
 
-  [[ $1 == '-q' || $1 == '--question' ]] && {
-    __goto_question_folder "$2"
-    return $?
-  }
+    -q | --question)
+      __goto_question_folder "$2"
+      return $?
+      ;;
 
-  [[ $1 == '-m' || $1 == '--map-file' ]] && {
-    __goto_get_destiny_file
-    return $?
-  }
+    -m | --map-file)
+      __goto_get_destiny_file
+      return $?
+      ;;
+  esac
 
   local destino
   destino=$(__goto_get_destiny "$1" 2> /dev/null)
