@@ -167,13 +167,34 @@ dela por dentro, sem duplicar nada.
 62 testes existentes, que já cobrem as guardas de validação de cada
 função — não precisou de teste novo dedicado.
 
-## 6. `refactor`: fonte única para a lista de flags
+## 6. `refactor`: fonte única para a lista de flags — feito
 
 A string de opções usada no autocomplete
 (`__goto_completion`, variável `options`) é mantida à mão, separada da
 lista real de flags aceitas por `goto()`. Quem adicionar uma flag nova em
-um lugar pode esquecer do outro. Proposta: uma constante única (array)
-referenciada nos dois pontos.
+um lugar pode esquecer do outro.
+
+**Bug real encontrado nessa duplicação:** a string tinha `--e --edit` em
+vez de `-e --edit` — a forma curta `-e` nunca era sugerida pelo
+autocomplete, e um `--e` inválido (que `goto()` nem reconhece) era
+sugerido no lugar. Exatamente o tipo de erro que uma fonte única evita.
+
+Implementado como um array `__GOTO_FLAGS` (pares `<curta> <longa>`)
+definido uma vez, perto do topo do arquivo, e referenciado por
+`__goto_completion` via `"${__GOTO_FLAGS[*]}"`. O `case` dentro de
+`goto()` continua sendo a implementação real de cada flag — não dá pra
+gerar os `case ... ;;` a partir de um array em Bash — então `__GOTO_FLAGS`
+resolve a duplicação do lado do autocomplete e corrige o typo, mas ainda
+depende de quem adicionar uma flag nova lembrar de atualizar os dois
+lugares (documentado como comentário logo acima do array).
+
+**Cuidado que apareceu na implementação:** a primeira versão declarou o
+array como `readonly`, o que parece a escolha óbvia para uma constante,
+mas quebra o re-source do script — `source goto.sh` uma segunda vez na
+mesma sessão (comum ao dar `source ~/.bashrc` de novo) falha com
+"variável permite somente leitura". Como o restante do script nunca usou
+`readonly` em lugar nenhum e sempre foi seguro re-sourcear, o array ficou
+como uma atribuição normal.
 
 **Prioridade:** baixa. **Risco:** baixo — só Bash, sem dependência de SO.
 

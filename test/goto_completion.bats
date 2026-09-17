@@ -46,6 +46,20 @@ contains_reply() {
   assert_success
 }
 
+@test "__goto_completion sugere '-e' (forma curta de --edit)" {
+  COMP_WORDS=(goto "-")
+  COMP_CWORD=1
+
+  __goto_completion
+
+  # a lista de opções era uma string retypada à mão e tinha "--e" no lugar
+  # de "-e"; ao centralizar em __GOTO_FLAGS esse typo foi corrigido.
+  run contains_reply "-e"
+  assert_success
+  run contains_reply "--e"
+  assert_failure
+}
+
 @test "__goto_completion sugere apelidos cadastrados para -d/-u/-r/-g" {
   COMP_WORDS=(goto -d "")
   COMP_CWORD=2

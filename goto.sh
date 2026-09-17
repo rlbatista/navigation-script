@@ -11,6 +11,27 @@ if ((BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 4))); 
 fi
 
 ##########################################################################################################
+## Lista de flags reconhecidas por goto(), como pares <curta> <longa>. É a fonte única usada pelo
+## autocomplete (__goto_completion) para sugerir as opções disponíveis. O case dentro de goto() continua
+## sendo a implementação de cada flag; ao adicionar uma flag nova lá, adicione o par correspondente aqui
+## também.
+##########################################################################################################
+__GOTO_FLAGS=(
+  -h --help
+  -e --edit
+  -s --show-destinies
+  -g --get
+  -c --check-destinies
+  -p --purge-destinies
+  -a --add
+  -d --delete
+  -u --update
+  -r --rename
+  -q --question
+  -m --map-file
+)
+
+##########################################################################################################
 ## Função...: goto
 ## Descrição: Função principal do script, onde a principal atividade é navegar para diretório mapeados em
 ##            em um arquivo (destinos.map).
@@ -667,7 +688,7 @@ function __goto_completion() {
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local registeredDestinies
   registeredDestinies="$(awk -F'=' '{print $1}' "$destFile")"
-  local options="-h --help --e --edit -s --show-destinies -g --get -c --check-destinies -p --purge-destinies -a --add -d --delete -u --update -r --rename -q --question -m --map-file"
+  local options="${__GOTO_FLAGS[*]}"
   COMPREPLY=( )
 
   case "$prev" in
