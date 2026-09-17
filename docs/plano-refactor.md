@@ -57,7 +57,7 @@ usuário já tenha em uso. Correção: `local destino` antes da atribuição
 **Prioridade:** alta. **Risco:** nenhum — escopo de variável em Bash,
 comportamento idêntico em qualquer plataforma.
 
-## 2. `fix`: propagar falha de `__goto_add_destiny` em update/rename
+## 2. `fix`: propagar falha de `__goto_add_destiny` em update/rename — feito
 
 `__goto_update_destiny` e `__goto_rename_destiny` implementam a operação
 como remove + add, mas descartam a saída e o código de retorno do `add`:

@@ -166,6 +166,21 @@ setup() {
   assert_failure 21
 }
 
+@test "__goto_rename_destiny falha quando o novo apelido já existe e preserva o mapeamento antigo" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  __goto_add_destiny "$DIR_B" "alias2" > /dev/null
+
+  run __goto_rename_destiny "alias1" "alias2"
+  assert_failure 22
+  assert_output --partial "já existe"
+
+  # nenhum dos dois mapeamentos originais pode ter sido perdido
+  run __goto_get_destiny "alias1"
+  assert_output "$(realpath "$DIR_A")"
+  run __goto_get_destiny "alias2"
+  assert_output "$(realpath "$DIR_B")"
+}
+
 # --- __goto_sort_destiny_file ---
 
 @test "__goto_sort_destiny_file ordena o arquivo de mapeamentos alfabeticamente" {

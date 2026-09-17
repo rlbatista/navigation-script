@@ -548,9 +548,17 @@ function __goto_update_destiny() {
     __goto_generate_return_code ERR_ALIAS_NOT_FOUND
     return $?
   }
-  
-  __goto_remove_destiny "$destAlias"  > /dev/null 2>&1
-  __goto_add_destiny "$dir" "$destAlias" > /dev/null 2>&1
+
+  local oldDir
+  oldDir=$(__goto_get_destiny "$destAlias" 2> /dev/null)
+
+  __goto_remove_destiny "$destAlias" > /dev/null 2>&1
+  __goto_add_destiny "$dir" "$destAlias" > /dev/null 2>&1 || {
+    __goto_add_destiny "$oldDir" "$destAlias" > /dev/null 2>&1
+    echo "Não foi possível atualizar [$destAlias]. Mapeamento original restaurado." >&2
+    __goto_generate_return_code ERR_DIRECTORY_NOT_FOUND
+    return $?
+  }
 
   echo "Destino [$destAlias] atualizado"
   __goto_generate_return_code OK
@@ -594,6 +602,14 @@ function __goto_rename_destiny() {
     return $?
   }
 
+  grep -q "^$newAlias=" "$destMap" && {
+    echo "Destino [$newAlias] já existe" >&2
+    __goto_manual_use
+    __goto_manual_rename_destiny
+    __goto_generate_return_code ERR_ALIAS_ALREADY_EXISTS
+    return $?
+  }
+
   local destAlias
   destAlias=$(__goto_get_destiny "$oldAlias")
   [[ -z $destAlias ]] && {
@@ -603,7 +619,13 @@ function __goto_rename_destiny() {
   }
 
   __goto_remove_destiny "$oldAlias" > /dev/null 2>&1
-  __goto_add_destiny "$destAlias" "$newAlias" > /dev/null 2>&1
+  __goto_add_destiny "$destAlias" "$newAlias" > /dev/null 2>&1 || {
+    __goto_add_destiny "$destAlias" "$oldAlias" > /dev/null 2>&1
+    echo "Não foi possível renomear [$oldAlias] para [$newAlias]. Mapeamento original restaurado." >&2
+    __goto_generate_return_code ERR_ALIAS_ALREADY_EXISTS
+    return $?
+  }
+
   echo "Destino [$oldAlias] renomeado para [$newAlias]"
   __goto_generate_return_code OK
   return $?
@@ -810,6 +832,7 @@ function __goto_manual_rename_destiny() {
   echo -e "\t\t<antigo> - antigo apelido cadastrado"
   echo -e "\t\t<novo> - novo apelido que substituirá o <antigo>"
   echo -e "\t* Se o apelido antigo não existir, é exibida uma mensagem de erro"
+  echo -e "\t* Se o apelido novo já existir, é exibida uma mensagem de erro"
   __goto_generate_return_code OK
   return $?
 }
