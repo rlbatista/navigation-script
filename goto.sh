@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##########################################################################################################
 ## Checagem de versão do Bash. O script usa recursos que exigem Bash >= 4.4
