@@ -92,6 +92,7 @@ function goto() {
     return $?
   }
 
+  local destino
   destino=$(__goto_get_destiny "$1" 2> /dev/null)
 
   [[ -z $destino ]] && {

@@ -40,7 +40,7 @@ Duas notas importantes:
   deste item, é só uma observação para o caso de considerar isso no
   futuro.
 
-## 1. `fix`: declarar `destino` como `local` em `goto()`
+## 1. `fix`: declarar `destino` como `local` em `goto()` — feito
 
 [goto.sh:95](../goto.sh#L95):
 

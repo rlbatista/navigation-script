@@ -18,6 +18,14 @@ setup() {
   assert [ "$PWD" -ef "$DIR_A" ]
 }
 
+@test "goto não vaza a variável 'destino' para o escopo global" {
+  unset destino
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  goto alias1
+  run declare -p destino
+  assert_failure
+}
+
 @test "goto navega para um subdiretório do apelido mapeado" {
   mkdir -p "$DIR_A/sub"
   __goto_add_destiny "$DIR_A" "alias1" > /dev/null
