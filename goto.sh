@@ -228,7 +228,7 @@ function __goto_show_destinies() {
       _valuewidth = 0
       _idx=0
       BG_GRAY="\033[48;5;238m"
-      BD_DEFAULT="\033[49m"
+      BG_DEFAULT="\033[49m"
       RESET="\033[0m"
     }
 

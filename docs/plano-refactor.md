@@ -87,7 +87,7 @@ recolocando o mapeamento antigo) se ele falhar.
 **Prioridade:** alta. **Risco:** nenhum — lógica pura de Bash, sem
 comando de SO envolvido.
 
-## 3. `fix`: variáveis de cor trocadas no awk de `__goto_show_destinies`
+## 3. `fix`: variáveis de cor trocadas no awk de `__goto_show_destinies` — feito
 
 [goto.sh:230-246](../goto.sh#L230-L246):
 

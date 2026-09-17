@@ -83,6 +83,18 @@ setup() {
   assert_output --partial "$(realpath "$DIR_A")"
 }
 
+@test "goto -s aplica a cor de fundo também nas linhas pares (zebrado)" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  __goto_add_destiny "$DIR_B" "alias2" > /dev/null
+
+  run goto -s
+  assert_success
+  # a primeira linha (índice par) deve carregar o escape code de "fundo
+  # padrão" (\033[49m) logo antes do apelido; sem o fix, essa cor ficava
+  # vazia e o apelido aparecia sem nenhum escape code na frente.
+  assert_line --partial $'\033[49malias1'
+}
+
 @test "goto -g obtém o diretório de um apelido" {
   __goto_add_destiny "$DIR_A" "alias1" > /dev/null
   run goto -g alias1
