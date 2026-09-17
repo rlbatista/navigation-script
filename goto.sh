@@ -179,6 +179,7 @@ function __goto_generate_return_code() {
     ERR_DIRECTORY_ACCESS_DENIED) return 31;;
     ERR_DIRECTORY_NOT_FOUND) return 32;;
     ERR_DIRECTORY_MISSING_ON_COMMAND) return 33;;
+    ERR_DIRECTORY_CANT_CREATE) return 34;;
     
     ERR_FILE_ALREADY_EXISTS) return 40;;
     ERR_FILE_ACCESS_DENIED) return 41;;
@@ -319,11 +320,15 @@ function __goto_get_destiny() {
 ## Parametros: nenhum
 ## Descrição.: Função interna que visa garantir a existencia do arquivo de mapeamento. A função busca o
 ##            arquivo apontado pela variável de ambiente GOTO_DESTINY_FILE e caso ela não exista, o padrão
-##            $HOME/.goto-destinies é utilizado.
+##            $HOME/.goto-cfg/goto-destinies é utilizado.
 ##########################################################################################################
 function __goto_get_destiny_file() {
-  local mapFile="${GOTO_DESTINY_FILE:-$HOME/.goto-destinies}"
+  local mapFile="${GOTO_DESTINY_FILE:-$HOME/.goto-cfg/goto-destinies}"
   [[ -f "$mapFile" ]] || {
+    if ! mkdir -p "$(dirname "$mapFile")"; then
+      echo -e "Não foi possível criar o arquivo de mapeamento" >&2
+      return "$(__goto_exit_code ERR_DIRECTORY_CANT_CREATE)"
+    fi
     touch "$mapFile"
   }
   echo "$mapFile"

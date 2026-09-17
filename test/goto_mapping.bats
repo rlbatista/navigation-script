@@ -22,13 +22,64 @@ setup() {
   assert [ -f "$GOTO_DESTINY_FILE" ]
 }
 
-@test "__goto_get_destiny_file usa \$HOME/.goto-destinies quando GOTO_DESTINY_FILE não está definida" {
+@test "__goto_get_destiny_file usa \$HOME/.goto-cfg/goto-destinies quando GOTO_DESTINY_FILE não está definida" {
   unset GOTO_DESTINY_FILE
   export HOME="$BATS_TEST_TMPDIR/fakehome"
   mkdir -p "$HOME"
   run __goto_get_destiny_file
   assert_success
-  assert_output "$HOME/.goto-destinies"
+  assert_output "$HOME/.goto-cfg/goto-destinies"
+}
+
+@test "__goto_get_destiny_file cria o diretório do arquivo quando ele ainda não existe" {
+  export GOTO_DESTINY_FILE="$BATS_TEST_TMPDIR/config/nested/goto-destinies"
+  assert [ ! -d "$BATS_TEST_TMPDIR/config" ]
+
+  run __goto_get_destiny_file
+  assert_success
+  assert_output "$GOTO_DESTINY_FILE"
+  assert [ -d "$BATS_TEST_TMPDIR/config/nested" ]
+  assert [ -f "$GOTO_DESTINY_FILE" ]
+}
+
+@test "__goto_get_destiny_file falha quando não consegue criar o diretório do arquivo de mapeamento" {
+  # um arquivo comum no lugar de um dos componentes do caminho faz o
+  # 'mkdir -p' falhar de verdade (ENOTDIR) em qualquer SO e independente de
+  # rodar como root ou não, ao contrário de simular via permissão negada
+  local blockingFile="$BATS_TEST_TMPDIR/nao-e-diretorio"
+  : > "$blockingFile"
+  export GOTO_DESTINY_FILE="$blockingFile/goto-destinies"
+
+  run __goto_get_destiny_file
+  assert_failure 34
+  assert [ ! -e "$GOTO_DESTINY_FILE" ]
+}
+
+@test "__goto_get_destiny_file não vaza a mensagem de erro para o stdout capturado pelos chamadores" {
+  # a maioria das funções do script faz mapFile="\$(__goto_get_destiny_file)",
+  # capturando o stdout como se fosse sempre o caminho do arquivo; a
+  # mensagem de erro precisa ir para o stderr, não para o stdout
+  local blockingFile="$BATS_TEST_TMPDIR/nao-e-diretorio"
+  : > "$blockingFile"
+  export GOTO_DESTINY_FILE="$blockingFile/goto-destinies"
+
+  local captured
+  set +e
+  captured="$(__goto_get_destiny_file 2> /dev/null)"
+  set -e
+  assert_equal "$captured" ""
+}
+
+@test "__goto_get_destiny_file trata um diretório com espaço no nome como um único caminho" {
+  # 'mkdir -p \$(dirname "\$mapFile")' sem aspas sofre word-splitting: um
+  # diretório com espaço no nome vira múltiplos argumentos para o mkdir
+  export GOTO_DESTINY_FILE="$BATS_TEST_TMPDIR/pasta com espaco/goto-destinies"
+
+  run __goto_get_destiny_file
+  assert_success
+  assert [ -d "$BATS_TEST_TMPDIR/pasta com espaco" ]
+  assert [ ! -e "$BATS_TEST_TMPDIR/com" ]
+  assert [ ! -e "$BATS_TEST_TMPDIR/espaco" ]
 }
 
 # --- __goto_add_destiny ---
