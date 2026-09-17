@@ -48,12 +48,12 @@ function goto() {
     return "$(__goto_exit_code OK)"
   }
 
-  local mapfile
-  mapfile="$(__goto_get_destiny_file)"
+  local mapFile
+  mapFile="$(__goto_get_destiny_file)"
 
   case "$1" in
     -e | --edit)
-      vi "$mapfile"
+      vi "$mapFile"
       return "$(__goto_exit_code OK)"
       ;;
 

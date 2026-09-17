@@ -198,7 +198,7 @@ como uma atribuição normal.
 
 **Prioridade:** baixa. **Risco:** baixo — só Bash, sem dependência de SO.
 
-## 7. `refactor`: renomear `local mapfile` para `mapFile`
+## 7. `refactor`: renomear `local mapfile` para `mapFile` — feito
 
 [goto.sh:31](../goto.sh#L31):
 
