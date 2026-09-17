@@ -1,6 +1,16 @@
 #!/bin/bash
 
 ##########################################################################################################
+## Checagem de versão do Bash. O script usa recursos que exigem Bash >= 4.4
+## (mapfile/readarray, expansão ${var,,}, complete -o nosort), necessários
+## tanto no Linux quanto no macOS (cujo Bash padrão é o 3.2).
+##########################################################################################################
+if ((BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 4))); then
+  echo "goto.sh requer Bash >= 4.4 (versão atual: $BASH_VERSION)" >&2
+  return 1 2>/dev/null || exit 1
+fi
+
+##########################################################################################################
 ## Função...: goto
 ## Descrição: Função principal do script, onde a principal atividade é navegar para diretório mapeados em
 ##            em um arquivo (destinos.map).
@@ -483,7 +493,11 @@ function __goto_remove_destiny() {
     return $?
   }
 
-  sed -i "/^$destAlias=/d" "$destMap"
+  local tmpFile
+  tmpFile=$(mktemp "${TMPDIR:-/tmp}/goto-destinies.XXXXXX")
+  grep -v "^$destAlias=" "$destMap" > "$tmpFile"
+  mv "$tmpFile" "$destMap"
+
   echo "Destino [$destAlias] removido"
   __goto_generate_return_code OK
   return $?
@@ -632,7 +646,7 @@ function __goto_sort_destiny_file() {
   local destMap
   destMap="$(__goto_get_destiny_file)"
   local tmpFile
-  tmpFile=$(mktemp)
+  tmpFile=$(mktemp "${TMPDIR:-/tmp}/goto-destinies.XXXXXX")
 
   sort "$destMap" > "$tmpFile"
   mv "$tmpFile" "$destMap"

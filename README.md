@@ -7,10 +7,17 @@ mapeia esse caminho para um apelido curto (ex.: `proj`) e navega com
 
 ## Dependências
 
-- `bash` (usa `mapfile`, `select`, `[[ ]]`)
+- `bash >= 4.4` (usa `mapfile`, expansão `${var,,}`, `complete -o nosort`)
+  — o script verifica a versão ao ser carregado e recusa rodar em versões
+  mais antigas (ex.: o Bash 3.2 que vem por padrão no macOS)
 - `eza` — usado no autocomplete para listar subdiretórios
 - `vi` — usado por `goto -e` para editar o arquivo de mapeamentos
-- utilitários padrão: `awk`, `grep`, `sed`, `sort`, `realpath`, `mktemp`
+- utilitários padrão: `awk`, `grep`, `sort`, `realpath`, `mktemp`
+
+Testado e compatível com Linux (GNU coreutils) e macOS (BSD userland),
+desde que o Bash em uso atenda ao requisito de versão acima — veja
+[docs/unificacao-linux-mac.md](docs/unificacao-linux-mac.md) para o
+histórico de ajustes de portabilidade entre as duas plataformas.
 
 ## Instalação
 
