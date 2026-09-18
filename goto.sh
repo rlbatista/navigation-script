@@ -428,6 +428,14 @@ function __goto_create_bkp() {
   [[ ! -e "$bkpDestinyFile" ]] && {
     local bkpDestinyDir
     bkpDestinyDir="$(dirname "$bkpDestinyFile")"
+
+    [[ ! -d "$bkpDestinyDir" ]] && {
+      if ! mkdir -p "$bkpDestinyDir"; then
+        echo -e "Não foi possível criar o backup. Não foi possível criar o diretório $bkpDestinyDir"
+        return "$(__goto_exit_code ERR_DIRECTORY_CANT_CREATE)"
+      fi
+    }
+
     [[ ! -w "$bkpDestinyDir" || ! -x "$bkpDestinyDir" ]] && {
       echo -e "Não foi possível criar o backup. Acesso negado em $bkpDestinyFile"
       return "$(__goto_exit_code ERR_FILE_ACCESS_DENIED)"

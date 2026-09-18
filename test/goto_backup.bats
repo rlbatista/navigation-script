@@ -48,3 +48,46 @@ setup() {
   run diff "$GOTO_DESTINY_FILE" "${GOTO_DESTINY_FILE}~"
   assert_success
 }
+
+@test "__goto_create_bkp cria o diretório de destino quando ele não existe" {
+  local bkpFile="$BATS_TEST_TMPDIR/novo-diretorio/backup"
+  assert [ ! -d "$BATS_TEST_TMPDIR/novo-diretorio" ]
+
+  run __goto_create_bkp "$bkpFile"
+  assert_success
+  assert [ -d "$BATS_TEST_TMPDIR/novo-diretorio" ]
+  assert [ -f "$bkpFile" ]
+}
+
+@test "__goto_create_bkp cria diretórios aninhados quando nenhum deles existe ainda" {
+  local bkpFile="$BATS_TEST_TMPDIR/a/b/c/backup"
+
+  run __goto_create_bkp "$bkpFile"
+  assert_success
+  assert [ -f "$bkpFile" ]
+}
+
+@test "__goto_create_bkp falha quando não consegue criar o diretório de destino" {
+  # um arquivo comum no lugar de um componente do caminho faz o 'mkdir -p'
+  # falhar de verdade (ENOTDIR), funciona em qualquer SO e independente de
+  # rodar como root ou não
+  local blockingFile="$BATS_TEST_TMPDIR/nao-e-diretorio"
+  : > "$blockingFile"
+
+  run __goto_create_bkp "$blockingFile/backup"
+  assert_failure 34
+}
+
+@test "__goto_create_bkp continua reportando acesso negado quando o diretório já existe mas não é gravável" {
+  [[ $EUID -eq 0 ]] && skip "root ignora permissões de diretório"
+
+  local blockedDir="$BATS_TEST_TMPDIR/sem-permissao"
+  mkdir -p "$blockedDir"
+  chmod 000 "$blockedDir"
+
+  run __goto_create_bkp "$blockedDir/backup"
+  chmod 755 "$blockedDir"
+
+  assert_failure 41
+  assert_output --partial "Acesso negado"
+}
