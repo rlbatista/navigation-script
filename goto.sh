@@ -78,25 +78,25 @@ function goto() {
       ;;
 
     -a | --add)
-      __goto_create_bkp
+      __goto_copy_destiny_file
       __goto_add_destiny "$2" "$3"
       return $?
       ;;
 
     -d | --delete)
-      __goto_create_bkp
+      __goto_copy_destiny_file
       __goto_remove_destiny "$2"
       return $?
       ;;
 
     -u | --update)
-      __goto_create_bkp
+      __goto_copy_destiny_file
       __goto_update_destiny "$2" "$3"
       return $?
       ;;
 
     -r | --rename)
-      __goto_create_bkp
+      __goto_copy_destiny_file
       __goto_rename_destiny "$2" "$3"
       return $?
       ;;
@@ -376,7 +376,7 @@ function __goto_purge_destinies() {
     [[ -d $destino ]] || {
       fileWasPurged="yes"
       [[ $createBkp == "yes" ]] && {
-        __goto_create_bkp
+        __goto_copy_destiny_file
         createBkp="no-more"
       }
       __goto_remove_destiny "$chave"
@@ -392,14 +392,17 @@ function __goto_purge_destinies() {
 }
 
 ##########################################################################################################
-## Função....: __goto_create_bkp
-## Parametros: $1 -> (opcional) - Nome do arquivo que será utilizado como destino do backup.
+## Função....: __goto_copy_destiny_file
+## Parametros: $1 -> (opcional) - Nome do arquivo de destino da cópia. Se omitido, usa o backup automático
+##             padrão ($mapFile~), sobrescrevendo a cópia anterior.
 ##             $2 -> (opcional) - recebe -f ou --force para permitir a sobrescrita do arquivo de destino.
-## Descrição.: Provê a funcionalidade de backup do arquivo de destino. Toda operação do script que altera
-##            de alguma forma o conteúdo do arquivo, é feita uma cópia antes. O script mantém apenas uma
-##            cópia. Se o arquivo destino já existir, é exibida uma mensagem de erro o backup é cancelado.
+## Descrição.: Copia o arquivo de mapeamento para o destino informado, criando o diretório de destino se
+##             necessário. É o mecanismo usado tanto pelo backup automático (antes de qualquer operação
+##             que altera o arquivo, como -a/-d/-u/-r/-p) quanto por pedidos futuros de backup manual com
+##             nome de arquivo próprio. Se o arquivo destino já existir, é exibida uma mensagem de erro e
+##             a cópia é cancelada, a menos que --force seja usado.
 ##########################################################################################################
-function __goto_create_bkp() {
+function __goto_copy_destiny_file() {
   local bkpSourceFile
   bkpSourceFile="$(__goto_get_destiny_file)"
   local bkpDestinyFile="${1:-$(__goto_get_destiny_file)~}"
