@@ -132,6 +132,31 @@ setup() {
   assert_output --partial "está mapeado na chave alias1"
 }
 
+@test "goto -b cria um backup avulso do arquivo de mapeamento" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  run goto -b
+  assert_success
+  assert_output --partial "Backup criado com sucesso em:"
+}
+
+@test "goto -b aceita um destino explícito e --force" {
+  local customBkp="$BATS_TEST_TMPDIR/meu-backup.map"
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+
+  run goto -b "$customBkp"
+  assert_success
+  run goto -b "$customBkp" --force
+  assert_success
+  run diff "$GOTO_DESTINY_FILE" "$customBkp"
+  assert_success
+}
+
+@test "goto -h menciona a opção -b/--backup" {
+  run goto -h
+  assert_success
+  assert_output --partial "goto -b|--backup"
+}
+
 # --- ponto impuro: chamada a um comando externo (vi) ---
 
 @test "goto -e abre o arquivo de mapeamentos no editor configurado (vi)" {

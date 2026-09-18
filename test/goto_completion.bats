@@ -85,6 +85,17 @@ contains_reply() {
   assert_success
 }
 
+@test "__goto_completion sugere diretórios do sistema de arquivos para -b" {
+  cd "$BATS_TEST_TMPDIR"
+  COMP_WORDS=(goto -b "")
+  COMP_CWORD=2
+
+  __goto_completion
+
+  run contains_reply "dir_a"
+  assert_success
+}
+
 @test "__goto_completion lista o conteúdo do diretório mapeado usando eza" {
   mkdir -p "$DIR_A/sub1" "$DIR_A/sub2"
   stub_bin "eza" "printf '%s\n' '$DIR_A/sub1' '$DIR_A/sub2'"

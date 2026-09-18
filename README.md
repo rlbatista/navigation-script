@@ -76,6 +76,7 @@ e, ao completar um subdiretório, lista o conteúdo real da pasta mapeada.
 | `goto -q`, `--question [diretorio]` | Verifica se um diretório (ou o atual, se omitido) já está mapeado |
 | `goto -e`, `--edit` | Abre o arquivo de mapeamentos no `vi` |
 | `goto -m`, `--map-file` | Mostra o caminho do arquivo de mapeamentos em uso |
+| `goto -b`, `--backup [arquivo] [-f\|--force]` | Cria um backup avulso do arquivo de mapeamentos, mantido indefinidamente (não é sobrescrito pelo backup automático de `-a/-d/-u/-r/-p`) |
 
 ### Exemplos
 
@@ -105,6 +106,7 @@ Todas as funções retornam códigos semânticos centralizados em
 | 31 | ERR_DIRECTORY_ACCESS_DENIED | Sem permissão para acessar o diretório |
 | 32 | ERR_DIRECTORY_NOT_FOUND | Diretório não existe |
 | 33 | ERR_DIRECTORY_MISSING_ON_COMMAND | Diretório não informado no comando |
+| 34 | ERR_DIRECTORY_CANT_CREATE | Não foi possível criar o diretório de destino |
 | 40 | ERR_FILE_ALREADY_EXISTS | Arquivo de backup já existe |
 | 41 | ERR_FILE_ACCESS_DENIED | Sem permissão de escrita no arquivo/diretório de backup |
 | 42 | ERR_FILE_NOT_VALID | Caminho de backup não é um arquivo válido |
@@ -121,7 +123,8 @@ chamadas diretamente pelo usuário):
 - `__goto_show_destinies` — listagem formatada (`-s`)
 - `__goto_get_destiny` — resolve um apelido para seu diretório
 - `__goto_check_destinies` / `__goto_purge_destinies` — validação e limpeza
-- `__goto_copy_destiny_file` — backup do arquivo antes de alterações
+- `__goto_copy_destiny_file` — copia protegida do arquivo de mapeamentos (mecanismo usado tanto pelo backup automático quanto pelo manual)
+- `__goto_generate_backup_name` / `__goto_backup_destiny_file` — geram um nome de destino e conduzem o backup avulso (`-b`)
 - `__goto_add_destiny` / `__goto_remove_destiny` / `__goto_update_destiny` / `__goto_rename_destiny` — CRUD dos mapeamentos
 - `__goto_question_folder` — checa se um diretório já está mapeado (`-q`)
 - `__goto_sort_destiny_file` — mantém o arquivo ordenado alfabeticamente
@@ -150,7 +153,7 @@ Cada arquivo `.bats` cobre uma área do script:
 |---|---|
 | `test/goto_mapping.bats` | CRUD de mapeamentos: `__goto_add_destiny`, `__goto_get_destiny`, `__goto_remove_destiny`, `__goto_update_destiny`, `__goto_rename_destiny`, `__goto_sort_destiny_file`, `__goto_get_destiny_file` |
 | `test/goto_validation.bats` | `__goto_check_destinies`, `__goto_purge_destinies`, `__goto_question_folder` |
-| `test/goto_backup.bats` | `__goto_copy_destiny_file` (criação, proteção contra sobrescrita, `--force`) |
+| `test/goto_backup.bats` | `__goto_copy_destiny_file`, `__goto_generate_backup_name`, `__goto_backup_destiny_file` (criação, proteção contra sobrescrita, `--force`) |
 | `test/goto_navigation.bats` | Dispatcher principal `goto` (navegação, todas as flags, menu interativo e `-e/--edit`) |
 | `test/goto_completion.bats` | Autocomplete (`__goto_completion`) |
 | `test/goto_return_codes.bats` | Mapeamento de `__goto_generate_return_code` |

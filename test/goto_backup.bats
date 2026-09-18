@@ -91,3 +91,84 @@ setup() {
   assert_failure 41
   assert_output --partial "Acesso negado"
 }
+
+# --- __goto_generate_backup_name ---
+
+@test "__goto_generate_backup_name cria o diretório de backup e devolve um caminho dentro dele" {
+  local bkpDir
+  bkpDir="$(dirname "$GOTO_DESTINY_FILE")/backup"
+  assert [ ! -d "$bkpDir" ]
+
+  run __goto_generate_backup_name
+  assert_success
+  assert [ -d "$bkpDir" ]
+  assert [ -f "$output" ]
+  run dirname "$output"
+  assert_output "$bkpDir"
+}
+
+@test "__goto_generate_backup_name gera um nome diferente a cada chamada" {
+  local first second
+  first="$(__goto_generate_backup_name)"
+  second="$(__goto_generate_backup_name)"
+
+  assert_not_equal "$first" "$second"
+  assert [ -f "$first" ]
+  assert [ -f "$second" ]
+}
+
+# --- __goto_backup_destiny_file ---
+
+@test "__goto_backup_destiny_file sem argumentos gera um nome e cria o backup com sucesso" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+
+  run __goto_backup_destiny_file
+  assert_success
+  assert_output --partial "Backup criado com sucesso em:"
+
+  local bkpDir
+  bkpDir="$(dirname "$GOTO_DESTINY_FILE")/backup"
+  assert [ -n "$(ls -A "$bkpDir")" ]
+}
+
+@test "__goto_backup_destiny_file chamada duas vezes sem argumentos mantém os dois backups" {
+  __goto_backup_destiny_file > /dev/null
+  __goto_backup_destiny_file > /dev/null
+
+  local bkpDir
+  bkpDir="$(dirname "$GOTO_DESTINY_FILE")/backup"
+  local count
+  count="$(find "$bkpDir" -type f | wc -l)"
+  assert_equal "$count" "2"
+}
+
+@test "__goto_backup_destiny_file usa o destino informado quando fornecido" {
+  local customBkp="$BATS_TEST_TMPDIR/meu-backup.map"
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+
+  run __goto_backup_destiny_file "$customBkp"
+  assert_success
+  assert_output --partial "Backup criado com sucesso em: $customBkp"
+  run diff "$GOTO_DESTINY_FILE" "$customBkp"
+  assert_success
+}
+
+@test "__goto_backup_destiny_file falha se o destino informado já existir sem --force" {
+  local customBkp="$BATS_TEST_TMPDIR/meu-backup.map"
+  : > "$customBkp"
+
+  run __goto_backup_destiny_file "$customBkp"
+  assert_failure 40
+  assert_output --partial "já existe"
+}
+
+@test "__goto_backup_destiny_file sobrescreve o destino informado quando --force é usado" {
+  local customBkp="$BATS_TEST_TMPDIR/meu-backup.map"
+  echo "conteudo antigo" > "$customBkp"
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+
+  run __goto_backup_destiny_file "$customBkp" --force
+  assert_success
+  run diff "$GOTO_DESTINY_FILE" "$customBkp"
+  assert_success
+}

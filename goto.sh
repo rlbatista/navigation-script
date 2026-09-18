@@ -29,6 +29,7 @@ __GOTO_FLAGS=(
   -r --rename
   -q --question
   -m --map-file
+  -b --backup
 )
 
 ##########################################################################################################
@@ -108,6 +109,11 @@ function goto() {
 
     -m | --map-file)
       __goto_get_destiny_file
+      return $?
+      ;;
+
+    -b | --backup)
+      __goto_backup_destiny_file "$2" "$3"
       return $?
       ;;
   esac
@@ -656,7 +662,6 @@ function __goto_rename_destiny() {
 ## Descrição.: Verifica se o diretório informado está mapeado.
 ##             Se não for informado um parametro, o diretório atual é utilizado.
 ##########################################################################################################
-
 function __goto_question_folder() {
   local destMap
   destMap="$(__goto_get_destiny_file)"
@@ -710,6 +715,57 @@ function __goto_sort_destiny_file() {
 }
 
 ##########################################################################################################
+## Função....: __goto_generate_backup_name
+## Parametros: nenhum
+## Descrição.: Gera um nome de arquivo disponível no diretório padrão de backup do script (o diretório
+##             "backup" ao lado do arquivo de mapeamento), garantindo unicidade e criação atômica via
+##             mktemp em vez de um laço manual de tentativa e erro baseado em timestamp.
+##########################################################################################################
+function __goto_generate_backup_name() {
+  local bkpPath
+  bkpPath="$(dirname "$(__goto_get_destiny_file)")/backup"
+
+  mkdir -p "$bkpPath" || {
+    echo "Não foi possível criar o diretório de backup $bkpPath" >&2
+    return "$(__goto_exit_code ERR_DIRECTORY_CANT_CREATE)"
+  }
+  local isoDate="$(date +%FT%R:%S%z)"
+  # sem echo/return explícitos de propósito: por ser a última instrução da
+  # função, tanto o stdout (o caminho gerado) quanto o status de saída do
+  # mktemp atravessam para quem chamou esta função, igual a qualquer comando
+  # Unix bem comportado (echo do resultado + exit code de sucesso/falha).
+  # Tornar isso explícito exigiria capturar o resultado antes de checar o
+  # status, sob risco de mascarar uma falha do mktemp (ex.: sem permissão)
+  # como sucesso.
+  mktemp "$bkpPath/goto-destinies-bkp-$isoDate-XXXXXX"
+}
+
+##########################################################################################################
+## Função....: __goto_backup_destiny_file
+## Parametros: $1 (opcional) -> Nome do arquivo de destino do backup. Se omitido, um nome é calculado por
+##             __goto_generate_backup_name.
+##             $2 (opcional) -> recebe -f ou --force para permitir a sobrescrita do arquivo de destino.
+## Descrição.: Cria um backup deliberado do arquivo de mapeamento (goto -b/--backup), em um destino que
+##             não é sobrescrito pelo backup automático das operações de edição (-a/-d/-u/-r/-p).
+##########################################################################################################
+function __goto_backup_destiny_file() {
+  local bkpDestiny="$1"
+  local force="$2"
+
+  [[ -z $bkpDestiny ]] && {
+    bkpDestiny="$(__goto_generate_backup_name)" || return $?
+    # mktemp já criou o arquivo vazio pra reservar o nome com segurança; forçar
+    # aqui é seguro, pois não existe conteúdo de usuário sendo sobrescrito
+    force="--force"
+  }
+
+  __goto_copy_destiny_file "$bkpDestiny" "$force" || return $?
+
+  echo "Backup criado com sucesso em: $bkpDestiny"
+  return "$(__goto_exit_code OK)"
+}
+
+##########################################################################################################
 ## Função...: __goto_completion
 ## Descrição: Provê a funciolidade "completar" para o script ao pressionar a tecla <TAB>.
 ##########################################################################################################
@@ -735,7 +791,7 @@ function __goto_completion() {
     -d|--delete|-u|--update|-r|--rename|-g|--get)
       mapfile -t COMPREPLY < <(compgen -W "$registeredDestinies" -- "$cur")
       ;;
-    -a|--add|-q|--question)
+    -a|--add|-q|--question|-b|--backup)
       mapfile -t COMPREPLY < <(compgen -d -- "$cur")
       ;;
     *)
@@ -873,6 +929,17 @@ function __goto_manual_show_map_file() {
   return "$(__goto_exit_code OK)"
 }
 
+function __goto_manual_backup_destiny_file() {
+  echo -e "\nCria um backup avulso do arquivo de mapeamento, que não é sobrescrito pelo"
+  echo -e "backup automático feito antes de -a/-d/-u/-r/-p:"
+  echo -e "\tgoto -b|--backup [arquivo] [-f|--force]"
+  echo -e "\t\t[arquivo] - (opcional) caminho de destino do backup"
+  echo -e "\t\t            se omitido, um nome é gerado automaticamente no diretório de backup"
+  echo -e "\t\t[-f|--force] - (opcional) sobrescreve o arquivo de destino se ele já existir"
+  echo -e "\t* Se o arquivo de destino já existir e --force não for usado, é exibida uma mensagem de erro"
+  return "$(__goto_exit_code OK)"
+}
+
 function __goto_manual_show_manual() {
   echo -e "\nExibe o manual:"
   echo -e "\tgoto -h|--help"
@@ -894,6 +961,7 @@ function __goto_manual() {
   __goto_manual_rename_destiny
   __goto_manual_question_folder
   __goto_manual_show_map_file
+  __goto_manual_backup_destiny_file
   __goto_manual_show_manual
   return "$(__goto_exit_code OK)"
 }
