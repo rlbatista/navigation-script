@@ -19,6 +19,30 @@ setup() {
   assert_success
 }
 
+@test "__goto_copy_destiny_file usa o arquivo de mapeamento como origem quando \$3 não é informado" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  local customBkp="$BATS_TEST_TMPDIR/custom.bkp"
+
+  run __goto_copy_destiny_file "$customBkp"
+  assert_success
+  run diff "$GOTO_DESTINY_FILE" "$customBkp"
+  assert_success
+}
+
+@test "__goto_copy_destiny_file copia de uma origem explícita (\$3), não do arquivo de mapeamento" {
+  local customSource="$BATS_TEST_TMPDIR/origem.txt"
+  echo "conteudo da origem" > "$customSource"
+  local customDest="$BATS_TEST_TMPDIR/destino.txt"
+
+  run __goto_copy_destiny_file "$customDest" "" "$customSource"
+  assert_success
+  run diff "$customSource" "$customDest"
+  assert_success
+  # garante que copiou da origem informada, e não do arquivo de mapeamento
+  run diff "$GOTO_DESTINY_FILE" "$customDest"
+  assert_failure
+}
+
 @test "__goto_copy_destiny_file falha se o arquivo de destino do backup já existir sem --force" {
   local customBkp="$BATS_TEST_TMPDIR/custom.bkp"
   : > "$customBkp"
@@ -171,4 +195,60 @@ setup() {
   assert_success
   run diff "$GOTO_DESTINY_FILE" "$customBkp"
   assert_success
+}
+
+# --- __goto_restore_destiny_file ---
+
+@test "__goto_restore_destiny_file restaura o arquivo de mapeamento a partir de um backup explícito" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  local bkpFile="$BATS_TEST_TMPDIR/meu.bkp"
+  __goto_backup_destiny_file "$bkpFile" > /dev/null
+
+  __goto_add_destiny "$DIR_B" "alias2" > /dev/null
+  run grep -q "^alias2=" "$GOTO_DESTINY_FILE"
+  assert_success
+
+  run __goto_restore_destiny_file "$bkpFile"
+  assert_success
+  assert_output --partial "restaurado a partir de: $bkpFile"
+
+  run grep -q "^alias1=" "$GOTO_DESTINY_FILE"
+  assert_success
+  run grep -q "^alias2=" "$GOTO_DESTINY_FILE"
+  assert_failure
+}
+
+@test "__goto_restore_destiny_file usa o backup automático padrão (\$mapFile~) quando nenhum arquivo é informado" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  __goto_copy_destiny_file > /dev/null
+
+  __goto_add_destiny "$DIR_B" "alias2" > /dev/null
+
+  run __goto_restore_destiny_file
+  assert_success
+
+  run grep -q "^alias1=" "$GOTO_DESTINY_FILE"
+  assert_success
+  run grep -q "^alias2=" "$GOTO_DESTINY_FILE"
+  assert_failure
+}
+
+@test "__goto_restore_destiny_file falha quando o arquivo de backup não existe" {
+  run __goto_restore_destiny_file "$BATS_TEST_TMPDIR/nao-existe.bkp"
+  assert_failure 44
+  assert_output --partial "não encontrado"
+}
+
+@test "__goto_restore_destiny_file sobrescreve o arquivo de mapeamento mesmo sem --force" {
+  # restaurar sempre sobrescreve o mapeamento atual -- é o próprio propósito
+  # da operação, então não deveria bater na proteção de "já existe"
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  local bkpFile="$BATS_TEST_TMPDIR/meu.bkp"
+  __goto_backup_destiny_file "$bkpFile" > /dev/null
+
+  assert [ -e "$GOTO_DESTINY_FILE" ]
+
+  run __goto_restore_destiny_file "$bkpFile"
+  assert_success
+  refute_output --partial "já existe"
 }

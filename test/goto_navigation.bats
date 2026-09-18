@@ -157,6 +157,67 @@ setup() {
   assert_output --partial "goto -b|--backup"
 }
 
+@test "goto -t restaura o arquivo de mapeamento a partir de um backup explícito" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  local bkpFile="$BATS_TEST_TMPDIR/meu.bkp"
+  goto -b "$bkpFile" > /dev/null
+
+  __goto_add_destiny "$DIR_B" "alias2" > /dev/null
+
+  run goto -t "$bkpFile"
+  assert_success
+  assert_output --partial "restaurado a partir de: $bkpFile"
+
+  run grep -q "^alias1=" "$GOTO_DESTINY_FILE"
+  assert_success
+  run grep -q "^alias2=" "$GOTO_DESTINY_FILE"
+  assert_failure
+}
+
+@test "goto -t faz um backup avulso do estado atual antes de restaurar" {
+  __goto_add_destiny "$DIR_A" "alias1" > /dev/null
+  local bkpFile="$BATS_TEST_TMPDIR/meu.bkp"
+  goto -b "$bkpFile" > /dev/null
+
+  __goto_add_destiny "$DIR_B" "alias2" > /dev/null
+
+  local bkpDir
+  bkpDir="$(dirname "$GOTO_DESTINY_FILE")/backup"
+  assert [ -z "$(ls -A "$bkpDir" 2> /dev/null)" ]
+
+  run goto -t "$bkpFile"
+  assert_success
+  assert_output --partial "Backup criado com sucesso em:"
+
+  # a rede de segurança deve conter o estado de ANTES do restore (com os
+  # dois aliases), não o estado depois
+  local safetyNet
+  safetyNet="$(find "$bkpDir" -type f | head -n1)"
+  run grep -q "^alias2=" "$safetyNet"
+  assert_success
+}
+
+@test "goto -t sem argumento usa o backup automático padrão sem se auto-destruir" {
+  # 'goto -a' (e não __goto_add_destiny direto) para que o backup automático
+  # padrão ($mapFile~) seja de fato criado antes da segunda adição
+  goto -a "$DIR_A" "alias1" > /dev/null
+  goto -a "$DIR_B" "alias2" > /dev/null
+
+  run goto -t
+  assert_success
+
+  run grep -q "^alias1=" "$GOTO_DESTINY_FILE"
+  assert_success
+  run grep -q "^alias2=" "$GOTO_DESTINY_FILE"
+  assert_failure
+}
+
+@test "goto -h menciona a opção -t/--restore" {
+  run goto -h
+  assert_success
+  assert_output --partial "goto -t|--restore"
+}
+
 # --- ponto impuro: chamada a um comando externo (vi) ---
 
 @test "goto -e abre o arquivo de mapeamentos no editor configurado (vi)" {

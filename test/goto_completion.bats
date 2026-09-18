@@ -96,6 +96,18 @@ contains_reply() {
   assert_success
 }
 
+@test "__goto_completion sugere arquivos (não só diretórios) para -t" {
+  cd "$BATS_TEST_TMPDIR"
+  : > meu-backup.map
+  COMP_WORDS=(goto -t "")
+  COMP_CWORD=2
+
+  __goto_completion
+
+  run contains_reply "meu-backup.map"
+  assert_success
+}
+
 @test "__goto_completion lista o conteúdo do diretório mapeado usando eza" {
   mkdir -p "$DIR_A/sub1" "$DIR_A/sub2"
   stub_bin "eza" "printf '%s\n' '$DIR_A/sub1' '$DIR_A/sub2'"

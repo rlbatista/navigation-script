@@ -30,6 +30,7 @@ __GOTO_FLAGS=(
   -q --question
   -m --map-file
   -b --backup
+  -t --restore
 )
 
 ##########################################################################################################
@@ -116,6 +117,12 @@ function goto() {
       __goto_backup_destiny_file "$2" "$3"
       return $?
       ;;
+
+    -t | --restore)
+      __goto_backup_destiny_file
+      __goto_restore_destiny_file "$2"
+      return $?
+      ;;
   esac
 
   local destino
@@ -191,6 +198,7 @@ function __goto_generate_return_code() {
     ERR_FILE_ACCESS_DENIED) return 41;;
     ERR_FILE_NOT_VALID) return 42;;
     ERR_FILE_CANT_COPY) return 43;;
+    ERR_FILE_NOT_FOUND) return 44;;
     *) return 1;;
   esac
 }
@@ -402,15 +410,17 @@ function __goto_purge_destinies() {
 ## Parametros: $1 -> (opcional) - Nome do arquivo de destino da cópia. Se omitido, usa o backup automático
 ##             padrão ($mapFile~), sobrescrevendo a cópia anterior.
 ##             $2 -> (opcional) - recebe -f ou --force para permitir a sobrescrita do arquivo de destino.
-## Descrição.: Copia o arquivo de mapeamento para o destino informado, criando o diretório de destino se
-##             necessário. É o mecanismo usado tanto pelo backup automático (antes de qualquer operação
-##             que altera o arquivo, como -a/-d/-u/-r/-p) quanto por pedidos futuros de backup manual com
-##             nome de arquivo próprio. Se o arquivo destino já existir, é exibida uma mensagem de erro e
-##             a cópia é cancelada, a menos que --force seja usado.
+##             $3 -> (opcional) - Nome do arquivo de origem da cópia. Se omitido, usa o arquivo de
+##             mapeamento em uso ($mapFile) -- é o caso do backup (copiar $mapFile para outro lugar). Para
+##             restaurar um backup, informe aqui o arquivo de backup e em $1 o próprio $mapFile.
+## Descrição.: Copia o arquivo de origem para o destino informado, criando o diretório de destino se
+##             necessário. É o mecanismo usado pelo backup automático e manual (copiar $mapFile para um
+##             destino) e pela restauração (copiar um backup de volta para $mapFile). Se o arquivo destino
+##             já existir, é exibida uma mensagem de erro e a cópia é cancelada, a menos que --force seja
+##             usado.
 ##########################################################################################################
 function __goto_copy_destiny_file() {
-  local bkpSourceFile
-  bkpSourceFile="$(__goto_get_destiny_file)"
+  local bkpSourceFile="${3:-$(__goto_get_destiny_file)}"
   local bkpDestinyFile="${1:-$(__goto_get_destiny_file)~}"
   local overwrite="no"
   [[ ${2,,} == '-f' || ${2,,} == '--force' || "$bkpSourceFile~" == "$bkpDestinyFile" ]] && {
@@ -456,6 +466,28 @@ function __goto_copy_destiny_file() {
     return "$(__goto_exit_code ERR_FILE_CANT_COPY)"
   fi
 
+  return "$(__goto_exit_code OK)"
+}
+
+##########################################################################################################
+## Função....: __goto_restore_destiny_file
+## Parametros: $1 -> (opcional) - Nome do arquivo que se deseja restaurar. Caso não seja informado, o
+##             padrão ($mapFile~) será utilizado
+## Descrição.: Restaura o arquivo informado (ou o padrão $mapFile~) tornando-o o arquivo de mapeamento em
+##             uso. Como o objetivo é justamente substituir o arquivo de mapeamento atual, a cópia é
+##             sempre feita com --force -- não há proteção de sobrescrita a pedir, diferente do backup.
+##########################################################################################################
+function __goto_restore_destiny_file() {
+  local restoreFrom
+  restoreFrom="${1:-$(__goto_get_destiny_file)~}"
+  [[ -e "$restoreFrom" ]] || {
+    echo "Não foi possível restaurar o backup. Arquivo [$restoreFrom] não encontrado" >&2
+    return "$(__goto_exit_code ERR_FILE_NOT_FOUND)"
+  }
+
+  __goto_copy_destiny_file "$(__goto_get_destiny_file)" "--force" "$restoreFrom" || return $?
+
+  echo "Arquivo de mapeamento restaurado a partir de: $restoreFrom"
   return "$(__goto_exit_code OK)"
 }
 
@@ -794,6 +826,9 @@ function __goto_completion() {
     -a|--add|-q|--question|-b|--backup)
       mapfile -t COMPREPLY < <(compgen -d -- "$cur")
       ;;
+    -t|--restore)
+      mapfile -t COMPREPLY < <(compgen -f -- "$cur")
+      ;;
     *)
       local mappedItem=${COMP_WORDS[1]}
       local folder
@@ -940,6 +975,16 @@ function __goto_manual_backup_destiny_file() {
   return "$(__goto_exit_code OK)"
 }
 
+function __goto_manual_restore_destiny_file() {
+  echo -e "\nRestaura o arquivo de mapeamento a partir de um backup. Antes de sobrescrever,"
+  echo -e "faz um backup avulso do estado atual (igual ao goto -b), como rede de segurança:"
+  echo -e "\tgoto -t|--restore [arquivo]"
+  echo -e "\t\t[arquivo] - (opcional) backup a partir do qual restaurar"
+  echo -e "\t\t            se omitido, usa o backup automático padrão (o mesmo de -a/-d/-u/-r/-p)"
+  echo -e "\t* O arquivo de mapeamento atual é sempre sobrescrito -- não há --force a informar"
+  return "$(__goto_exit_code OK)"
+}
+
 function __goto_manual_show_manual() {
   echo -e "\nExibe o manual:"
   echo -e "\tgoto -h|--help"
@@ -962,6 +1007,7 @@ function __goto_manual() {
   __goto_manual_question_folder
   __goto_manual_show_map_file
   __goto_manual_backup_destiny_file
+  __goto_manual_restore_destiny_file
   __goto_manual_show_manual
   return "$(__goto_exit_code OK)"
 }
